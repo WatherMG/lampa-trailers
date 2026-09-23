@@ -25,9 +25,10 @@ jobs:
           node-version: '22'
       - name: Validate JavaScript syntax
         run: |
-          node --check trailer-fix.js
-          node --check test/trailer-fix.test.js
+          node --check trailers.js
+          node --check test/trailers.test.js
           node --check scripts/build.mjs
+          node --check scripts/verify-dist.mjs
       - name: Run integration tests
         run: node --test test/*.test.js
       - name: Assemble allowlisted Pages artifact

@@ -1,0 +1,52 @@
+name: Playback bug
+description: Report a reproducible trailer playback problem on Lampa or webOS
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before reporting, reproduce the issue with only the recommended CUB/TVIGL plugins and trailers.js enabled.
+        Never include signed CDN URLs, cookies, access tokens, or private account details in public logs.
+  - type: input
+    id: device
+    attributes:
+      label: TV/device model and webOS version
+      placeholder: LG G6, webOS ...
+    validations:
+      required: true
+  - type: input
+    id: lampa
+    attributes:
+      label: Lampa version and installation type
+      placeholder: Native webOS app or browser, version ...
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Trailer source
+      options:
+        - YouTube
+        - RuTube
+        - Both
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Include the film or series, the selected source and the relevant plugin settings.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result and sanitized error messages
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true

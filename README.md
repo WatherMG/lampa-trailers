@@ -10,15 +10,15 @@ An independent, experimental helper extension for **Lampa**. It works with the e
 
 This repo is configured to publish a static site from GitHub Actions. Once **Settings → Pages → Build and deployment → Source → GitHub Actions** is enabled and the deployment succeeds, the intended URLs are:
 
-- Plugin: `https://wathermg.github.io/lampa-trailers/trailer-fix.js`
+- Plugin: `https://wathermg.github.io/lampa-trailers/trailers.js`
 - Diagnostics: `https://wathermg.github.io/lampa-trailers/diagnostics.html`
 - Bridge: `https://wathermg.github.io/lampa-trailers/youtube-bridge.html`
 
-**Do not use the links before Pages is actually live.** Use the diagnostics page to confirm HTTPS and test the YouTube IFrame bridge.
+After the Pages deployment succeeds, open the diagnostics page on the TV and test the YouTube IFrame bridge. A successful CI run does not prove successful playback on a physical webOS device.
 
-In Lampa, install and enable the original CUB/TMDB trailer plugin (if your Lampa build does not provide that button already), and **TVIGL RuTube** `https://tvigl.github.io/plugins/rutube.js`. Disable the overlapping `plugin.rootu.top/rutube.js` or other RuTube playback handlers: Lampa chooses the first registered handler for a URL, and registration order is not a reliable extension mechanism. Then add this repo's `trailer-fix.js` as a normal Lampa JS plugin, restart the app, and test the trailer buttons inside a film/series card. This extension intercepts the selected link before starting Lampa Player; it does not register an additional handler for the public RuTube URL.
+In Lampa, install and enable the original CUB/TMDB trailer plugin (if your Lampa build does not provide that button already), and **TVIGL RuTube** `https://tvigl.github.io/plugins/rutube.js`. Disable the overlapping `plugin.rootu.top/rutube.js` or other RuTube playback handlers: Lampa chooses the first registered handler for a URL, and registration order is not a reliable extension mechanism. Then add this repo's `trailers.js` as a normal Lampa JS plugin, restart the app, and test the trailer buttons inside a film/series card. This extension intercepts the selected link before starting Lampa Player; it does not register an additional handler for the public RuTube URL.
 
-Settings appear in **Lampa → Settings → Трейлеры: YouTube и RuTube**, provided `SettingsApi.addComponent` is supported. On older Lampa builds the settings fall back to `Дополнительно`. Select `YouTube: способ просмотра` and `RuTube: качество при запуске` as needed. The plugin is also testable from the DevTools console via `LampaTrailerFix`.
+**Migration from `trailer-fix.js`:** remove the old extension URL from Lampa, install `trailers.js` and restart the app. The old filename will not be published. The legacy JavaScript API `LampaTrailerFix` remains available as an alias of `LampaTrailers`.\n\nSettings appear in **Lampa → Settings → Трейлеры: YouTube и RuTube**, provided `SettingsApi.addComponent` is supported. On older Lampa builds the settings fall back to `Дополнительно`. Select `YouTube: способ просмотра` and `RuTube: качество при запуске` as needed. The plugin is also testable from the DevTools console via `LampaTrailers`.
 
 ## Playback architecture and sources
 
@@ -44,7 +44,7 @@ Settings appear in **Lampa → Settings → Трейлеры: YouTube и RuTube*
 | YouTube: ID приложения на webOS | `youtube.leanback.v4` | Same ID is commonly used by the official app and AdFree replacement. Find the actual installed ID with `ares-install --list --device <NAME>` or webOS CLI. |
 | RuTube: ручной выбор качества | On | Populate Lampa's quality selector with actual HLS variant URLs. |
 | RuTube: качество при запуске | Maximum | `max`, adaptive `auto`, up to `1080p`, up to `720p` (available variants only). |
-| Диагностические сообщения | Off | Enables plugin console messages; available counters are exposed through `LampaTrailerFix.stats`. |
+| Диагностические сообщения | Off | Enables plugin console messages; available counters are exposed through `LampaTrailers.stats`. |
 
 **Do not enable every overlapping trailer plugin.** Search and playback are separate responsibilities: use CUB to find YouTube videos, TVIGL to find RuTube videos, and this extension to improve playback and present the available RuTube variants. Disabling this extension restores the original Lampa/CUB/TVIGL behaviour without modifying their files.
 
@@ -60,7 +60,7 @@ npm run build
 
 The Pages workflow runs syntax checks, integration tests and static artifact verification on pull requests and pushes to `main`. It deploys allowlisted HTML/JS files on `main` after tests succeed. It does not run privileged network proxy services and stores no API tokens or credentials.
 
-**Required one-time GitHub setting:** select `GitHub Actions` as the Pages publishing source. The installed GitHub connector cannot change that repository setting; do it in the repository UI. `actions/configure-pages` cannot enable the site on a new repository with the default `GITHUB_TOKEN` alone. Check the Actions logs and the Pages URL after the first successful deployment.
+Pages must use **Settings → Pages → Build and deployment → Source → GitHub Actions**. Verify the first deployment in the workflow logs and visit the Pages URL before installing the plugin.
 
 ### Physical-TV acceptance checklist
 
@@ -68,7 +68,7 @@ The Pages workflow runs syntax checks, integration tests and static artifact ver
 2. The same YouTube trailer opens via a Lampa card on native webOS; test both `auto` and `bridge` modes, including return from the official YouTube app (or AdFree, if installed).
 3. RuTube card trailer plays with audio; the quality panel shows **only** resolutions offered by that exact playlist, switching preserves playback/seek, and Auto works.
 4. When the TV is offline, RuTube API fails, or the installed YouTube app is absent, Lampa remains recoverable; after leaving the player, ordinary torrent/film playback still works.
-5. Collect the console log with `LampaTrailerFix.config.debug = true` and `LampaTrailerFix.stats` if any case fails. Don't publish signed CDN URLs or account information in a public issue.
+5. Collect the console log with `LampaTrailers.config.debug = true` and `LampaTrailers.stats` if any case fails. Don't publish signed CDN URLs or account information in a public issue.
 
 ## Development priorities
 

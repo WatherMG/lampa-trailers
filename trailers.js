@@ -28,7 +28,7 @@
       if (Array.isArray(installed)) {
         installed.some(function (entry) {
           var url = typeof entry === 'string' ? entry : entry && entry.url;
-          if (typeof url === 'string' && /(?:^|\/)trailer-fix\.js(?:[?#]|$)/.test(url)) {
+          if (typeof url === 'string' && /(?:^|\/)trailers\.js(?:[?#]|$)/.test(url)) {
             pluginUrl = url;
             return true;
           }
@@ -519,5 +519,6 @@
     youtubeId: youtubeId,
     rutubeId: rutubeId
   };
-  console.info('[TrailerFix] v' + VERSION + ', bridge=' + bridgeUrl + ', install order: TVIGL/CUB then TrailerFix');
+  window.LampaTrailers = window.LampaTrailerFix; // Public alias; keep the legacy API compatible.
+  console.info('[LampaTrailers] v' + VERSION + ', bridge=' + bridgeUrl + ', install order: TVIGL/CUB then Lampa Trailers');
 })();

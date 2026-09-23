@@ -6,9 +6,9 @@ const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
 
-const plugin = fs.readFileSync(path.join(__dirname, '..', 'trailer-fix.js'), 'utf8');
+const plugin = fs.readFileSync(path.join(__dirname, '..', 'trailers.js'), 'utf8');
 const bridge = fs.readFileSync(path.join(__dirname, '..', 'youtube-bridge.html'), 'utf8');
-const PLUGIN_URL = 'https://example.github.io/lampa-trailers/trailer-fix.js';
+const PLUGIN_URL = 'https://example.github.io/lampa-trailers/trailers.js';
 
 function harness(options = {}) {
   const events = {};
@@ -97,9 +97,9 @@ function harness(options = {}) {
     clearTimeout(id) { timers.delete(id); },
     Date, Math, Object, Array, String, Number, JSON, Error
   };
-  vm.runInNewContext(plugin, sandbox, { filename: 'trailer-fix.js' });
+  vm.runInNewContext(plugin, sandbox, { filename: 'trailers.js' });
   return {
-    api: fakeWindow.LampaTrailerFix, Lampa, tubes, played, requests, xhrs,
+    api: fakeWindow.LampaTrailerFix, alias: fakeWindow.LampaTrailers, Lampa, tubes, played, requests, xhrs,
     launches, notices, settings, components, timers, commands,
     get root() { return root; },
     get closeCount() { return closeCount; },
@@ -121,6 +121,7 @@ test('bridge URL resolves to the installed plugin origin', () => {
   const h = harness();
   assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html');
   assert.equal(h.components[0].component, 'ltf_settings');
+  assert.strictEqual(h.alias, h.api);
   assert.equal(h.settings.length, 5);
 });
 
