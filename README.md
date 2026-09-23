@@ -18,9 +18,23 @@ After the Pages deployment succeeds, open the diagnostics page on the TV and tes
 
 Install `trailers.js` as a normal Lampa JS extension and restart the app. The extension adds one **Трейлеры** button; its list separates **YouTube** and **RuTube** with headings and per-item source labels. The original YouTube button is hidden while our combined button is active. Disable older overlapping RuTube trailer plugins (TVIGL/RootU) for a clean one-button interface: the combined button performs its own RuTube discovery. You can keep TVIGL enabled as an emergency playback fallback, but its card button is hidden when our combined button is present. If RuTube's cache/search fails on the TV, YouTube trailers still appear when Lampa supplies TMDB video metadata.
 
-**Migration from `trailer-fix.js`:** remove the old extension URL from Lampa, install `trailers.js` and restart the app. The old filename will not be published. The legacy JavaScript API `LampaTrailerFix` remains available as an alias of `LampaTrailers`.\n\nSettings appear in **Lampa → Settings → Трейлеры: YouTube и RuTube**, provided `SettingsApi.addComponent` is supported. On older Lampa builds the settings fall back to `Дополнительно`. Select `YouTube: способ просмотра` and `RuTube: качество при запуске` as needed. The plugin is also testable from DevTools via `LampaTrailers`. In version 0.4.0-beta the settings `youtube.leanback.v4` input is registered as a literal string in the Lampa Settings API; this fixes the previous undefined-value crash.
+**Migration from `trailer-fix.js`:** remove the old extension URL from Lampa, install `trailers.js` and restart the app. The old filename will not be published. The legacy JavaScript API `LampaTrailerFix` remains available as an alias of `LampaTrailers`.
 
-## Playback architecture and sources\n\n### Practical controls on LG webOS\n\nThe Lampa Player controls work for play/pause, volume, timeline seek and speed through the YouTube bridge. The official IFrame API does **not** expose supported commands for fixed video quality or arbitrary caption-track selection. For those functions use YouTube's own visible player controls if accessible with LG Magic Remote, or switch to the installed YouTube app. On RuTube, the ordinary Lampa HLS quality selector can show the variants; external audio rendition playlists are preserved rather than flattened.\n
+Settings appear in **Lampa → Settings → Трейлеры: YouTube и RuTube**, provided `SettingsApi.addComponent` is supported. On older Lampa builds the settings fall back to `Дополнительно`. Select `YouTube: способ просмотра` and `RuTube: качество при запуске` as needed. The plugin is also testable from DevTools via `LampaTrailers`. In version 0.4.1-beta the settings `youtube.leanback.v4` input is registered as a literal string in the Lampa Settings API; this fixes the previous undefined-value crash.
+
+## 0.4.1-beta fixes
+
+- Fixed a JavaScript syntax error in `youtube-bridge.html`: literal `\\n` sequences after an inline comment and in the message handler prevented the IFrame bridge from initializing. CI now parses the real inline HTML scripts and exercises the YouTube command handler.
+- Added independent **YouTube** and **RuTube** switches and a **Порядок источников** selector. RuTube off means no RuTube search request; YouTube off removes YouTube from the combined list.
+- Both sources enabled preserves the existing combined button, YouTube-first order, RuTube quality behavior and configurable YouTube application ID. A change to source controls applies the next time the combined list is opened.
+- Tests check both source orders, disabled searches/interception and the parameter lookup used by Lampa settings. Physical-TV playback still requires acceptance testing.
+
+## Playback architecture and sources
+
+### Practical controls on LG webOS
+
+The YouTube bridge forwards play/pause, volume, seek and playback-rate commands to the official IFrame API. This command path is covered by simulated tests, not yet confirmed on LG webOS. The official IFrame API does **not** expose supported commands for fixed video quality or arbitrary caption-track selection. For those functions use YouTube's own visible player controls if accessible with LG Magic Remote, or switch to the installed YouTube app. On RuTube, the ordinary Lampa HLS quality selector can show the variants; external audio rendition playlists are preserved rather than flattened.
+
 
 ### YouTube
 
@@ -40,6 +54,9 @@ Install `trailers.js` as a normal Lampa JS extension and restart the app. The ex
 
 | Option | Default | Meaning |
 |---|---|---|
+| YouTube: показывать трейлеры | On | Hide YouTube trailers from the combined list and bypass YouTube playback interception when off. |
+| RuTube: показывать трейлеры | On | Hide RuTube trailers, skip RuTube search requests, and bypass playback interception when off. |
+| Порядок источников | YouTube → RuTube | Put YouTube or RuTube first without changing their individual enable switches. |
 | YouTube: способ просмотра | Inside Lampa → installed YouTube app on failure | `auto`, `native`, `bridge`. `native` only applies on webOS and falls back to bridge if launching the app fails. |
 | YouTube: ID приложения на webOS | `youtube.leanback.v4` | Same ID is commonly used by the official app and AdFree replacement. Find the actual installed ID with `ares-install --list --device <NAME>` or webOS CLI. |
 | RuTube: ручной выбор качества | On | Populate Lampa's quality selector with actual HLS variant URLs. |
@@ -68,7 +85,9 @@ Pages must use **Settings → Pages → Build and deployment → Source → GitH
 2. The same YouTube trailer opens via a Lampa card on native webOS; test both `auto` and `bridge` modes, including return from the official YouTube app (or AdFree, if installed).
 3. RuTube card trailer plays with audio; the quality panel shows **only** resolutions offered by that exact playlist, switching preserves playback/seek, and Auto works.
 4. When the TV is offline, RuTube API fails, or the installed YouTube app is absent, Lampa remains recoverable; after leaving the player, ordinary torrent/film playback still works.
-5. In the combined card button verify both headings, choose YouTube and RuTube, and check that the selected source plays. Where RuTube search is blocked, collect its error without disabling YouTube.\n6. Collect the console log with `LampaTrailers.config.debug = true` and `LampaTrailers.stats` if any case fails. Don't publish signed CDN URLs or account information in a public issue.
+5. In the combined card button verify both headings, choose YouTube and RuTube, and check that the selected source plays.
+6. Switch off RuTube and reopen the combined button: YouTube must appear immediately, with no RuTube network requests. Switch off YouTube and confirm only RuTube remains. Turn both back on, reverse source order, and check headings and actual playback. Where RuTube search is blocked, collect its error without disabling YouTube.
+7. Collect the console log with `LampaTrailers.config.debug = true` and `LampaTrailers.stats` if any case fails. Don't publish signed CDN URLs or account information in a public issue.
 
 ## Development priorities
 
