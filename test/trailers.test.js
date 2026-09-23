@@ -414,7 +414,7 @@ test('disabled RuTube avoids all network requests and opens YouTube immediately'
   h.unifiedButtons[0].handlers['hover:enter']();
   assert.equal(h.requests.length, 0);
   assert.equal(h.selectedMenus.length, 1);
-  assert.deepEqual(h.selectedMenus[0].items.map(item => item.title),
+  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title),
     ['YouTube', 'Trailer']);
 });
 
@@ -433,7 +433,7 @@ test('stored source preferences disable YouTube and can display RuTube first', (
   h.unifiedButtons[0].handlers['hover:enter']();
   const id = 'e'.repeat(32);
   h.requests[0].success([{ title: 'RT', video_url: 'https://rutube.ru/video/' + id }]);
-  assert.deepEqual(h.selectedMenus[0].items.map(item => item.title), ['RuTube', 'RT']);
+  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'RT']);
 });
 
 test('source order can be changed while keeping both providers enabled', () => {
@@ -445,7 +445,7 @@ test('source order can be changed while keeping both providers enabled', () => {
   });
   h.unifiedButtons[0].handlers['hover:enter']();
   h.requests[0].success([{ title: 'RT', video_url: 'https://rutube.ru/video/' + 'f'.repeat(32) }]);
-  assert.deepEqual(h.selectedMenus[0].items.map(item => item.title), ['RuTube', 'RT', 'YouTube', 'YT']);
+  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'RT', 'YouTube', 'YT']);
 });
 
 test('disabled sources do not intercept playback from another plugin', () => {
