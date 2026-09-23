@@ -1,11 +1,11 @@
 {
   "name": "lampa-trailers",
-  "version": "0.4.0-beta.0",
+  "version": "0.4.1-beta.0",
   "private": true,
   "description": "YouTube and RuTube trailer playback support for Lampa on webOS",
   "repository": "https://github.com/WatherMG/lampa-trailers",
   "scripts": {
-    "check": "node --check trailers.js && node --check test/trailers.test.js",
+    "check": "node --check trailers.js && node --check test/trailers.test.js && node --check scripts/check-html.mjs && node scripts/check-html.mjs",
     "test": "node --test test/*.test.js",
     "build": "node scripts/build.mjs && node scripts/verify-dist.mjs"
   },
