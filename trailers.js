@@ -88,7 +88,8 @@
 
     function param(name, type, value, values, label, description, onChange) {
       var p = { name: name, type: type, default: value };
-      // Lampa Params.update() indexes values[name] even for text inputs.\n      // Its input registration must use the literal 'string', not undefined.\n      if (values || type === 'input') p.values = type === 'input' ? 'string' : values;
+      // Lampa Params.update() expects the literal 'string' for text inputs.
+      if (values || type === 'input') p.values = type === 'input' ? 'string' : values;
       Lampa.SettingsApi.addParam({
         component: settingSection, param: p,
         field: { name: label, description: description || '' }, onChange: onChange

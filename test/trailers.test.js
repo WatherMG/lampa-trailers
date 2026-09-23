@@ -270,7 +270,21 @@ test('YouTube bridge uses official API and origin/referrer policy', () => {
   assert.match(bridge, /parent\.postMessage/);
 });
 
-// Regression: Lampa Params.update indexes values[name][key] for every input.\ntest('text input advertises string values so Lampa settings never crash', () => {\n  const h = harness();\n  const input = h.settings.find(item => item.param.name === 'ltf_youtube_app_id');\n  assert.equal(input.param.type, 'input');\n  assert.equal(input.param.values, 'string');\n  const storedValue = 'youtube.leanback.v4';\n  const displayed = typeof input.param.values === 'string' ? storedValue : input.param.values[storedValue];\n  assert.equal(displayed, storedValue);\n});\ntest('YouTube bridge exposes native controls and playback speed', () => {\n  assert.match(bridge, /controls:\s*1/);\n  assert.match(bridge, /setPlaybackRate/);\n});\n
+// Regression: Lampa Params.update indexes values[name][key] for every input.
+test('text input advertises string values so Lampa settings never crash', () => {
+  const h = harness();
+  const input = h.settings.find(item => item.param.name === 'ltf_youtube_app_id');
+  assert.equal(input.param.type, 'input');
+  assert.equal(input.param.values, 'string');
+  const storedValue = 'youtube.leanback.v4';
+  const displayed = typeof input.param.values === 'string' ? storedValue : input.param.values[storedValue];
+  assert.equal(displayed, storedValue);
+});
+test('YouTube bridge exposes native controls and playback speed', () => {
+  assert.match(bridge, /controls:\s*1/);
+  assert.match(bridge, /setPlaybackRate/);
+});
+
 
 test('unified YouTube list preserves its source label and correct video URLs', () => {
   const h = harness();
