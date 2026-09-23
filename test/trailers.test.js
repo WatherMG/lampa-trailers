@@ -250,3 +250,33 @@ test('YouTube bridge uses official API and origin/referrer policy', () => {
 });
 
 // Regression: Lampa Params.update indexes values[name][key] for every input.\ntest('text input advertises string values so Lampa settings never crash', () => {\n  const h = harness();\n  const input = h.settings.find(item => item.param.name === 'ltf_youtube_app_id');\n  assert.equal(input.param.type, 'input');\n  assert.equal(input.param.values, 'string');\n  const storedValue = 'youtube.leanback.v4';\n  const displayed = typeof input.param.values === 'string' ? storedValue : input.param.values[storedValue];\n  assert.equal(displayed, storedValue);\n});\ntest('YouTube bridge exposes native controls and playback speed', () => {\n  assert.match(bridge, /controls:\s*1/);\n  assert.match(bridge, /setPlaybackRate/);\n});\n
+
+test('unified YouTube list preserves its source label and correct video URLs', () => {
+  const h = harness();
+  const items = h.api.youtubeCardItems({ results: [
+    { name: 'Official trailer', key: 'dQw4w9WgXcQ', iso_639_1: 'en', official: true },
+    { name: 'Invalid entry', key: 'invalid' }
+  ] });
+  assert.equal(items.length, 1);
+  assert.match(items[0].subtitle, /^\[YouTube\] EN/);
+  assert.equal(items[0].url, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+});
+
+test('unified RuTube search discards unavailable and non-RuTube videos', () => {
+  const h = harness();
+  const id = 'b'.repeat(32);
+  const rows = h.api.validRutubeTrailers({ results: [
+    { title: 'Фильм трейлер', video_url: 'https://rutube.ru/video/' + id, duration: 120 },
+    { title: 'Paid', embed_url: 'https://rutube.ru/video/' + id, is_paid: true },
+    { title: 'Wrong host', url: 'https://example.org/video/' + id }
+  ] });
+  assert.equal(rows.length, 1);
+  const items = h.api.rutubeCardItems(rows);
+  assert.equal(items[0].url, 'https://rutube.ru/video/' + id);
+  assert.match(items[0].subtitle, /^\[RuTube\]/);
+});
+
+test('YouTube bridge accepts playback speed commands', () => {
+  assert.match(bridge, /command === 'setPlaybackRate'/);
+  assert.match(bridge, /controls:\s*1/);
+});
