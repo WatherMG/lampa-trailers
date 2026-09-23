@@ -14,7 +14,7 @@
     return;
   }
 
-  var VERSION = '0.4.0-beta';
+  var VERSION = '0.4.1-beta';
   var INTERNAL_HOST = 'lampa-trailer-fix.invalid';
   var YT_PATH = '/youtube/';
   var tag = document.currentScript;
