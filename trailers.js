@@ -14,7 +14,7 @@
     return;
   }
 
-  var VERSION = '0.3.1-beta';
+  var VERSION = '0.4.0-beta';
   var INTERNAL_HOST = 'lampa-trailer-fix.invalid';
   var YT_PATH = '/youtube/';
   var tag = document.currentScript;
@@ -511,6 +511,156 @@
     }
   });
 
+
+  // A single card action with visibly separated YouTube and RuTube sources.
+  // Search is independent of TVIGL, which can remain disabled on webOS.
+  var unifiedCardGeneration = 0;
+  var rutubeSearchCache = {};
+  function trailerCardTitle(movie) {
+    return movie.title || movie.name || movie.original_title || movie.original_name || '';
+  }
+  function validRutubeTrailers(data) {
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch (e) { return []; }
+    }
+    var rows = Array.isArray(data) ? data : (data && data.results) || [];
+    if (!Array.isArray(rows)) return [];
+    return rows.filter(function (v) {
+      var url = v && (v.video_url || v.embed_url || v.url) || '';
+      return !!rutubeId(url) &&
+        !(v.is_hidden || v.is_deleted || v.is_locked || v.is_paid || v.is_livestream || v.is_adult) &&
+        (!v.duration || Number(v.duration) < 600);
+    }).slice(0, 12);
+  }
+  function fetchCardRutube(movie, isTV, callback) {
+    if (typeof Lampa.Reguest !== 'function') return callback([]);
+    var title = trailerCardTitle(movie);
+    var id = Number(movie.id);
+    if (!title || !Number.isFinite(id)) return callback([]);
+    var cacheKey = (isTV ? 'tv:' : 'movie:') + id;
+    var cached = rutubeSearchCache[cacheKey];
+    if (cached && cached.until > Date.now()) return callback(cached.rows);
+    var urls = [
+      'https://trailer.rootu.top/search/' + (isTV ? 'tv' : 'movie') + '/' +
+        ('000000' + id).slice(-Math.max(7, String(id).length)) + '.json'
+    ];
+    var year = String(movie.release_date || movie.first_air_date || '').slice(0, 4);
+    var search = [title, /^[0-9]{4}$/.test(year) ? year : '', 'трейлер'].filter(Boolean).join(' ');
+    urls.push('https://rutube.ru/api/search/video/?query=' + encodeURIComponent(search) + '&format=json');
+    function next(index) {
+      if (index >= urls.length) {
+        rutubeSearchCache[cacheKey] = { rows: [], until: Date.now() + 60000 };
+        return callback([]);
+      }
+      var network = new Lampa.Reguest();
+      if (network.timeout) network.timeout(6000);
+      var used = false;
+      function finish(data) {
+        if (used) return;
+        used = true;
+        try { if (network.clear) network.clear(); } catch (e) {}
+        var rows = validRutubeTrailers(data);
+        if (index === 1) rows = rows.filter(function (v) {
+          return /(?:трейлер|trailer|тизер|teaser)/i.test(v.title || '');
+        });
+        if (rows.length) {
+          rutubeSearchCache[cacheKey] = { rows: rows, until: Date.now() + 15 * 60000 };
+          callback(rows);
+        } else next(index + 1);
+      }
+      try {
+        network.native(urls[index], finish, function () { finish(null); });
+      } catch (e) { finish(null); }
+    }
+    next(0);
+  }
+  function youtubeCardItems(videos) {
+    var rows = videos && Array.isArray(videos.results) ? videos.results : [];
+    return rows.map(function (item) {
+      var url = item.url || (item.key ? 'https://www.youtube.com/watch?v=' + item.key : '');
+      if (!youtubeId(url)) return null;
+      return {
+        title: item.name || 'YouTube trailer',
+        subtitle: '[YouTube]' + (item.iso_639_1 ? ' ' + item.iso_639_1.toUpperCase() : '') +
+          (item.official ? ' · Официальный' : ''),
+        url: url,
+        youtube: true,
+        template: 'selectbox_icon',
+        thumbnail: item.icon || ('https://img.youtube.com/vi/' + youtubeId(url) + '/default.jpg')
+      };
+    }).filter(Boolean);
+  }
+  function rutubeCardItems(rows) {
+    return rows.map(function (item) {
+      return {
+        title: item.title || 'RuTube trailer',
+        subtitle: '[RuTube]' + (item.author && item.author.name ? ' · ' + item.author.name : ''),
+        url: item.video_url || item.embed_url || item.url,
+        iptv: true,
+        template: 'selectbox_icon',
+        thumbnail: item.thumbnail_url || ''
+      };
+    });
+  }
+  function showUnifiedTrailers(event, token) {
+    var youtube = youtubeCardItems(event.data && event.data.videos);
+    var movie = event.data && event.data.movie;
+    if (!movie) return;
+    if (Lampa.Noty && Lampa.Noty.show) Lampa.Noty.show('Поиск трейлеров RuTube…');
+    var isTV = event.object && event.object.method === 'tv';
+    fetchCardRutube(movie, isTV, function (rows) {
+      if (token !== unifiedCardGeneration) return;
+      var rutube = rutubeCardItems(rows);
+      var items = [];
+      if (youtube.length) {
+        items.push({ title: 'YouTube', separator: true });
+        items = items.concat(youtube);
+      }
+      if (rutube.length) {
+        items.push({ title: 'RuTube', separator: true });
+        items = items.concat(rutube);
+      }
+      if (!items.length) return notify('Трейлеры не найдены или источник RuTube недоступен.');
+      if (!Lampa.Select || !Lampa.Select.show) return notify('Lampa.Select недоступен.');
+      Lampa.Select.show({
+        title: 'Трейлеры · ' + trailerCardTitle(movie),
+        items: items,
+        onSelect: function (item) {
+          if (!item || !item.url) return;
+          var playlist = items.filter(function (i) { return !!i.url; });
+          Lampa.Player.play(item);
+          if (Lampa.Player.playlist) Lampa.Player.playlist(playlist);
+        },
+        onBack: function () {
+          if (Lampa.Controller && Lampa.Controller.toggle) Lampa.Controller.toggle('full_start');
+        }
+      });
+    });
+  }
+  if (Lampa.Listener && typeof Lampa.Listener.follow === 'function') {
+    Lampa.Listener.follow('full', function (event) {
+      if (!event || event.type !== 'complite' || !event.object ||
+          !event.object.activity || !event.object.activity.render ||
+          !event.data || !event.data.movie) return;
+      var render = event.object.activity.render();
+      if (!render || !render.find) return;
+      if (render.find('.view--ltf-unified').length) return;
+      var original = render.find('.view--trailer');
+      var rutube = render.find('.view--rutube_trailer');
+      var buttons = render.find('.full-start__button');
+      if (!buttons.length) return;
+      var button = $('<div class="full-start__button selector view--ltf-unified">' +
+        '<svg><use xlink:href="#sprite-trailer"></use></svg><span>Трейлеры</span></div>');
+      if (original.length) original.before(button);
+      else if (rutube.length) rutube.before(button);
+      else buttons.last().after(button);
+      original.addClass('hide');
+      rutube.addClass('hide');
+      var cardToken = ++unifiedCardGeneration;
+      button.on('hover:enter', function () { showUnifiedTrailers(event, cardToken); });
+    });
+  }
+
   window.LampaTrailerFix = {
     version: VERSION,
     config: config,
@@ -518,7 +668,10 @@
     bridgeUrl: bridgeUrl,
     parseHlsMaster: parseHlsMaster, // diagnostic and test only
     youtubeId: youtubeId,
-    rutubeId: rutubeId
+    rutubeId: rutubeId,
+    youtubeCardItems: youtubeCardItems,
+    rutubeCardItems: rutubeCardItems,
+    validRutubeTrailers: validRutubeTrailers
   };
   window.LampaTrailers = window.LampaTrailerFix; // Public alias; keep the legacy API compatible.
   console.info('[LampaTrailers] v' + VERSION + ', bridge=' + bridgeUrl + ', install order: TVIGL/CUB then Lampa Trailers');
