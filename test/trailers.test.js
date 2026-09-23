@@ -143,7 +143,7 @@ test('bridge URL resolves to the installed plugin origin', () => {
   assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html');
   assert.equal(h.components[0].component, 'ltf_settings');
   assert.strictEqual(h.alias, h.api);
-  assert.equal(h.settings.length, 5);
+  assert.equal(h.settings.length, 8);
 });
 
 test('cached inline script obtains original URL from the plugin list', () => {
@@ -339,4 +339,127 @@ test('combined card button shows YouTube and RuTube as separate selectable secti
   assert.match(items[1].subtitle, /^\[YouTube\]/);
   assert.equal(items[2].title, 'RuTube');
   assert.match(items[3].subtitle, /^\[RuTube\]/);
+});
+
+test('embedded YouTube script parses and handles real bridge commands', () => {
+  const match = bridge.match(/<script>\s*([\s\S]*?)\s*<\/script>/i);
+  assert.ok(match, 'bridge inline JavaScript exists');
+  const script = new vm.Script(match[1], { filename: 'youtube-bridge.html' });
+  const calls = [];
+  const outgoing = [];
+  const handlers = {};
+  let youtubePlayer;
+  const parent = { postMessage(message) { outgoing.push(message); } };
+  const frameWindow = {
+    parent,
+    addEventListener(type, fn) { handlers[type] = fn; }
+  };
+  class Player {
+    constructor(element, options) {
+      assert.equal(element, 'yt');
+      youtubePlayer = this;
+      this.options = options;
+    }
+    getCurrentTime() { return 1; }
+    getDuration() { return 90; }
+    getPlaybackQuality() { return 'hd720'; }
+    playVideo() { calls.push('play'); }
+    pauseVideo() { calls.push('pause'); }
+    setPlaybackRate(rate) { calls.push(['rate', rate]); }
+  }
+  script.runInNewContext({
+    window: frameWindow,
+    location: {
+      href: 'https://example.github.io/lampa-trailers/youtube-bridge.html?videoId=M7lc1UVf-VE&bridgeId=ltf_test',
+      origin: 'https://example.github.io'
+    },
+    URL,
+    YT: { Player },
+    setInterval() { return 1; },
+    clearInterval() {}
+  });
+  frameWindow.onYouTubeIframeAPIReady();
+  youtubePlayer.options.events.onReady();
+  assert.equal(outgoing[0].type, 'ready');
+  function command(type, data = {}) {
+    handlers.message({ source: parent, data: { bridgeId: 'ltf_test', type, data } });
+  }
+  command('play');
+  command('setPlaybackRate', { rate: 1.5 });
+  command('pause');
+  assert.deepEqual(calls, ['play', ['rate', 1.5], 'pause']);
+});
+
+test('text setting survives the same values lookup used by Lampa Params.update', () => {
+  function paramsUpdate(param, selected) {
+    const values = { [param.name]: param.values };
+    return typeof values[param.name] === 'string'
+      ? selected
+      : values[param.name][selected];
+  }
+  const h = harness();
+  const input = h.settings.find(item => item.param.name === 'ltf_youtube_app_id').param;
+  assert.throws(() => paramsUpdate({ name: input.name, type: 'input' }, 'youtube.leanback.v4'),
+    /undefined/);
+  assert.equal(paramsUpdate(input, 'youtube.leanback.v4'), 'youtube.leanback.v4');
+});
+
+test('disabled RuTube avoids all network requests and opens YouTube immediately', () => {
+  const h = harness();
+  h.settings.find(s => s.param.name === 'ltf_rutube_enabled').onChange(false);
+  h.fireFull({
+    movie: { id: 278, title: 'Movie' },
+    videos: { results: [{ name: 'Trailer', key: 'dQw4w9WgXcQ' }] }
+  });
+  h.unifiedButtons[0].handlers['hover:enter']();
+  assert.equal(h.requests.length, 0);
+  assert.equal(h.selectedMenus.length, 1);
+  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title),
+    ['YouTube', 'Trailer']);
+});
+
+test('stored source preferences disable YouTube and can display RuTube first', () => {
+  const h = harness({ storage: {
+    ltf_youtube_enabled: 'false',
+    ltf_rutube_enabled: true,
+    ltf_source_order: 'rutube_first'
+  } });
+  assert.equal(h.api.config.youtubeEnabled, false);
+  assert.equal(h.api.config.sourceOrder, 'rutube_first');
+  h.fireFull({
+    movie: { id: 278, title: 'Movie' },
+    videos: { results: [{ name: 'YT', key: 'dQw4w9WgXcQ' }] }
+  });
+  h.unifiedButtons[0].handlers['hover:enter']();
+  const id = 'e'.repeat(32);
+  h.requests[0].success([{ title: 'RT', video_url: 'https://rutube.ru/video/' + id }]);
+  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'RT']);
+});
+
+test('source order can be changed while keeping both providers enabled', () => {
+  const h = harness();
+  h.settings.find(s => s.param.name === 'ltf_source_order').onChange('rutube_first');
+  h.fireFull({
+    movie: { id: 278, title: 'Movie' },
+    videos: { results: [{ name: 'YT', key: 'dQw4w9WgXcQ' }] }
+  });
+  h.unifiedButtons[0].handlers['hover:enter']();
+  h.requests[0].success([{ title: 'RT', video_url: 'https://rutube.ru/video/' + 'f'.repeat(32) }]);
+  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'RT', 'YouTube', 'YT']);
+});
+
+test('disabled sources do not intercept playback from another plugin', () => {
+  const h = harness({ storage: { ltf_youtube_enabled: false, ltf_rutube_enabled: false } });
+  const yt = 'https://youtu.be/dQw4w9WgXcQ';
+  const rt = 'https://rutube.ru/video/' + 'f'.repeat(32);
+  h.Lampa.Player.play({ url: yt });
+  h.Lampa.Player.play({ url: rt });
+  assert.deepEqual(h.played.map(item => item.url), [yt, rt]);
+  assert.equal(h.requests.length, 0);
+  assert.equal(h.launches.length, 0);
+  h.fireFull({ movie: { id: 278, title: 'Movie' }, videos: { results: [] } });
+  h.unifiedButtons[0].handlers['hover:enter']();
+  assert.equal(h.requests.length, 0);
+  assert.equal(h.selectedMenus.length, 0);
+  assert.match(h.notices.at(-1), /Включите YouTube или RuTube/);
 });

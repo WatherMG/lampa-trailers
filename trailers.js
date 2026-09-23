@@ -14,7 +14,7 @@
     return;
   }
 
-  var VERSION = '0.4.0-beta';
+  var VERSION = '0.4.1-beta';
   var INTERNAL_HOST = 'lampa-trailer-fix.invalid';
   var YT_PATH = '/youtube/';
   var tag = document.currentScript;
@@ -44,6 +44,9 @@
   var savedAppId = Lampa.Storage && Lampa.Storage.get ? Lampa.Storage.get('ltf_youtube_app_id', 'youtube.leanback.v4') : 'youtube.leanback.v4';
   var savedPreferred = Lampa.Storage && Lampa.Storage.get ? Lampa.Storage.get('ltf_rutube_preferred', 'max') : 'max';
   var savedDebug = Lampa.Storage && Lampa.Storage.get ? Lampa.Storage.get('ltf_debug', false) : false;
+  var savedYoutubeEnabled = Lampa.Storage && Lampa.Storage.get ? Lampa.Storage.get('ltf_youtube_enabled', true) : true;
+  var savedRutubeEnabled = Lampa.Storage && Lampa.Storage.get ? Lampa.Storage.get('ltf_rutube_enabled', true) : true;
+  var savedSourceOrder = Lampa.Storage && Lampa.Storage.get ? Lampa.Storage.get('ltf_source_order', 'youtube_first') : 'youtube_first';
   var config = {
     // auto: try embedded player, fall back to YouTube app on iframe error.
     // native: always launch YouTube app; bridge: never leave Lampa automatically.
@@ -51,7 +54,10 @@
     rutubeQuality: savedQuality !== false && savedQuality !== 'false',
     rutubePreferred: /^(auto|max|1080|720)$/.test(savedPreferred) ? savedPreferred : 'max',
     youtubeAppId: /^[a-zA-Z0-9_.-]{4,120}$/.test(savedAppId) ? savedAppId : 'youtube.leanback.v4',
-    debug: savedDebug === true || savedDebug === 'true'
+    debug: savedDebug === true || savedDebug === 'true',
+    youtubeEnabled: savedYoutubeEnabled !== false && savedYoutubeEnabled !== 'false',
+    rutubeEnabled: savedRutubeEnabled !== false && savedRutubeEnabled !== 'false',
+    sourceOrder: /^(youtube_first|rutube_first)$/.test(savedSourceOrder) ? savedSourceOrder : 'youtube_first'
   };
   var counters = { youtube: 0, rutube: 0, rutubeFallback: 0, youtubeErrors: [] };
   // A second trailer selection must invalidate requests started for the first one.
@@ -95,6 +101,17 @@
         field: { name: label, description: description || '' }, onChange: onChange
       });
     }
+    param('ltf_youtube_enabled', 'trigger', true, null,
+      'YouTube: показывать трейлеры', 'Отключает YouTube в общем списке и его перехват плеером.',
+      function (value) { config.youtubeEnabled = value === true || value === 'true'; });
+    param('ltf_rutube_enabled', 'trigger', true, null,
+      'RuTube: показывать трейлеры', 'При отключении поиск RuTube и его перехват не выполняются.',
+      function (value) { config.rutubeEnabled = value === true || value === 'true'; });
+    param('ltf_source_order', 'select', 'youtube_first', {
+      youtube_first: 'YouTube → RuTube',
+      rutube_first: 'RuTube → YouTube'
+    }, 'Порядок источников', 'Первый источник показывается выше в списке.',
+      function (value) { if (/^(youtube_first|rutube_first)$/.test(value)) config.sourceOrder = value; });
     param('ltf_youtube_mode', 'select', 'auto', {
       auto: 'Внутри Lampa, затем приложение YouTube',
       native: 'Сразу приложение YouTube',
@@ -427,6 +444,7 @@
 
     var id = youtubeId(data.url);
     if (id) {
+      if (!config.youtubeEnabled) return;
       event.abort();
       counters.youtube++;
       if (config.youtubeMode === 'native' && window.webOS && webOS.service) {
@@ -450,7 +468,7 @@
     }
 
     id = rutubeId(data.url);
-    if (!id || !config.rutubeQuality || typeof Lampa.Reguest !== 'function') return;
+    if (!id || !config.rutubeEnabled || !config.rutubeQuality || typeof Lampa.Reguest !== 'function') return;
     event.abort();
     counters.rutube++;
     var originalData = Object.assign({}, data, { __trailerFixBypass: true });
@@ -604,24 +622,27 @@
     });
   }
   function showUnifiedTrailers(event, token) {
-    var youtube = youtubeCardItems(event.data && event.data.videos);
     var movie = event.data && event.data.movie;
     if (!movie) return;
-    if (Lampa.Noty && Lampa.Noty.show) Lampa.Noty.show('Поиск трейлеров RuTube…');
-    var isTV = event.object && event.object.method === 'tv';
-    fetchCardRutube(movie, isTV, function (rows) {
+
+    function showSources(rows) {
       if (token !== unifiedCardGeneration) return;
-      var rutube = rutubeCardItems(rows);
+      var youtube = config.youtubeEnabled ? youtubeCardItems(event.data && event.data.videos) : [];
+      var rutube = config.rutubeEnabled ? rutubeCardItems(rows) : [];
+      var sources = config.sourceOrder === 'rutube_first' ?
+        [{ name: 'RuTube', items: rutube }, { name: 'YouTube', items: youtube }] :
+        [{ name: 'YouTube', items: youtube }, { name: 'RuTube', items: rutube }];
       var items = [];
-      if (youtube.length) {
-        items.push({ title: 'YouTube', separator: true });
-        items = items.concat(youtube);
+      sources.forEach(function (source) {
+        if (!source.items.length) return;
+        items.push({ title: source.name, separator: true });
+        items = items.concat(source.items);
+      });
+      if (!items.length) {
+        return notify(!config.youtubeEnabled && !config.rutubeEnabled ?
+          'Включите YouTube или RuTube в настройках трейлеров.' :
+          'Трейлеры не найдены или выбранные источники недоступны.');
       }
-      if (rutube.length) {
-        items.push({ title: 'RuTube', separator: true });
-        items = items.concat(rutube);
-      }
-      if (!items.length) return notify('Трейлеры не найдены или источник RuTube недоступен.');
       if (!Lampa.Select || !Lampa.Select.show) return notify('Lampa.Select недоступен.');
       Lampa.Select.show({
         title: 'Трейлеры · ' + trailerCardTitle(movie),
@@ -636,7 +657,13 @@
           if (Lampa.Controller && Lampa.Controller.toggle) Lampa.Controller.toggle('full_start');
         }
       });
-    });
+    }
+
+    // Disabled RuTube must not issue any cache or API requests or delay YouTube.
+    if (!config.rutubeEnabled) return showSources([]);
+    var isTV = event.object && event.object.method === 'tv';
+    if (Lampa.Noty && Lampa.Noty.show) Lampa.Noty.show('Поиск трейлеров RuTube…');
+    fetchCardRutube(movie, isTV, showSources);
   }
   if (Lampa.Listener && typeof Lampa.Listener.follow === 'function') {
     Lampa.Listener.follow('full', function (event) {
