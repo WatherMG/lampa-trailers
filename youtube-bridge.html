@@ -51,7 +51,7 @@
               enablejsapi: 1,
               origin: location.origin,
               autoplay: 0,
-              controls: 0,
+              controls: 1, // Expose official YouTube CC/quality UI for pointer-capable TVs.\n              fs: 0,
               playsinline: 1,
               rel: 0
             },
@@ -89,7 +89,7 @@
           else if (command === 'seekTo') player.seekTo(Number(d.time) || 0, true);
           else if (command === 'setVolume') player.setVolume(Math.max(0, Math.min(100, Number(d.volume) || 0)));
           else if (command === 'mute') player.mute();
-          else if (command === 'unMute') player.unMute();
+          else if (command === 'unMute') player.unMute();\n          else if (command === 'setPlaybackRate') {\n            if (typeof player.setPlaybackRate === 'function') player.setPlaybackRate(Number(d.rate) || 1);\n          }
         } catch (e) { fail('yt-api-command'); }
       });
     })();
