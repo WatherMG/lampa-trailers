@@ -14,7 +14,7 @@
     return;
   }
 
-  var VERSION = '0.3.0-beta';
+  var VERSION = '0.3.1-beta';
   var INTERNAL_HOST = 'lampa-trailer-fix.invalid';
   var YT_PATH = '/youtube/';
   var tag = document.currentScript;
@@ -88,7 +88,7 @@
 
     function param(name, type, value, values, label, description, onChange) {
       var p = { name: name, type: type, default: value };
-      if (values) p.values = values;
+      // Lampa Params.update() indexes values[name] even for text inputs.\n      // Its input registration must use the literal 'string', not undefined.\n      if (values || type === 'input') p.values = type === 'input' ? 'string' : values;
       Lampa.SettingsApi.addParam({
         component: settingSection, param: p,
         field: { name: label, description: description || '' }, onChange: onChange
@@ -366,7 +366,7 @@
 
     root.addEventListener = listener.follow.bind(listener);
     root.canPlayType = function () { return 'maybe'; };
-    root.resize = function () {};
+    root.resize = function () {};\n    root.speed = function (value) { post('setPlaybackRate', { rate: value }); };
     root.load = function () {
       if (frame || !bridgeUrl) {
         if (!bridgeUrl) signalError('bridge не настроен: опубликуй оба файла на HTTPS');
