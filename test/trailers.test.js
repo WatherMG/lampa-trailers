@@ -140,7 +140,7 @@ function sampleManifest() {
 
 test('bridge URL resolves to the installed plugin origin', () => {
   const h = harness();
-  assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html');
+  assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html?v=0.4.1-beta');
   assert.equal(h.components[0].component, 'ltf_settings');
   assert.strictEqual(h.alias, h.api);
   assert.equal(h.settings.length, 8);
@@ -148,7 +148,7 @@ test('bridge URL resolves to the installed plugin origin', () => {
 
 test('cached inline script obtains original URL from the plugin list', () => {
   const h = harness({ inline: true, installed: [{ url: PLUGIN_URL, status: 1 }] });
-  assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html');
+  assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html?v=0.4.1-beta');
 });
 
 test('HLS parser resolves variants, selects bitrate, and does not duplicate labels', () => {

@@ -25,6 +25,7 @@ Settings appear in **Lampa → Settings → Трейлеры: YouTube и RuTube*
 ## 0.4.1-beta fixes
 
 - Fixed a JavaScript syntax error in `youtube-bridge.html`: literal `\\n` sequences after an inline comment and in the message handler prevented the IFrame bridge from initializing. CI now parses the real inline HTML scripts and exercises the YouTube command handler.
+- The plugin and diagnostics page request `youtube-bridge.html?v=0.4.1-beta` so webOS does not reuse previously cached malformed HTML. The `trailers.js` installation URL is unchanged.
 - Added independent **YouTube** and **RuTube** switches and a **Порядок источников** selector. RuTube off means no RuTube search request; YouTube off removes YouTube from the combined list.
 - Both sources enabled preserves the existing combined button, YouTube-first order, RuTube quality behavior and configurable YouTube application ID. A change to source controls applies the next time the combined list is opened.
 - Tests check both source orders, disabled searches/interception and the parameter lookup used by Lampa settings. Physical-TV playback still requires acceptance testing.

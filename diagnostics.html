@@ -42,6 +42,7 @@
         if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return log('Invalid YouTube ID');
         session = 'ltf_diag_' + Date.now();
         var url = new URL('youtube-bridge.html', location.href);
+        url.searchParams.set('v', '0.4.1-beta');
         url.searchParams.set('videoId', id);
         url.searchParams.set('bridgeId', session);
         iframe = document.createElement('iframe');
