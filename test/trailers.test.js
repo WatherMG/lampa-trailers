@@ -248,3 +248,5 @@ test('YouTube bridge uses official API and origin/referrer policy', () => {
   assert.match(bridge, /origin:\s*location\.origin/);
   assert.match(bridge, /parent\.postMessage/);
 });
+
+// Regression: Lampa Params.update indexes values[name][key] for every input.\ntest('text input advertises string values so Lampa settings never crash', () => {\n  const h = harness();\n  const input = h.settings.find(item => item.param.name === 'ltf_youtube_app_id');\n  assert.equal(input.param.type, 'input');\n  assert.equal(input.param.values, 'string');\n  const storedValue = 'youtube.leanback.v4';\n  const displayed = typeof input.param.values === 'string' ? storedValue : input.param.values[storedValue];\n  assert.equal(displayed, storedValue);\n});\ntest('YouTube bridge exposes native controls and playback speed', () => {\n  assert.match(bridge, /controls:\s*1/);\n  assert.match(bridge, /setPlaybackRate/);\n});\n
