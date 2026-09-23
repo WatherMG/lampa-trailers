@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lampa Trailer Fix — YouTube diagnostics</title>
+  <style>
+    body { background:#151515; color:#eee; font:18px/1.45 sans-serif; margin:16px; }
+    input,button { font:inherit; padding:10px; margin:4px; }
+    #frame { height:55vh; background:#000; }
+    #frame iframe { width:100%; height:100%; border:0; }
+    #log { padding:12px; white-space:pre-wrap; background:#252525; min-height:60px; }
+    button:focus,input:focus { outline:3px solid orange; }
+  </style>
+</head>
+<body>
+  <h1>YouTube Bridge — диагностика</h1>
+  <p>Эта страница проверяет встроенное воспроизведение с того же HTTPS-домена, что и плагин. Если здесь код 153 — проблема не в поиске трейлеров.</p>
+  <label for="video">YouTube video ID</label>
+  <input id="video" value="M7lc1UVf-VE" maxlength="11" size="13">
+  <button id="load">Загрузить</button>
+  <button id="play">Play</button>
+  <button id="pause">Pause</button>
+  <div id="frame"></div>
+  <pre id="log"></pre>
+  <script>
+    (function () {
+      'use strict';
+      var iframe = null;
+      var session = '';
+      var logBox = document.getElementById('log');
+      function log(message) {
+        logBox.textContent = new Date().toLocaleTimeString() + ' ' + message + '\n' + logBox.textContent.slice(0, 5000);
+      }
+      function send(type) {
+        if (!iframe || !iframe.contentWindow) return log('First press Загрузить');
+        iframe.contentWindow.postMessage({ bridgeId: session, type: type, data: {} }, location.origin);
+      }
+      document.getElementById('load').addEventListener('click', function () {
+        var id = document.getElementById('video').value.trim();
+        if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return log('Invalid YouTube ID');
+        session = 'ltf_diag_' + Date.now();
+        var url = new URL('youtube-bridge.html', location.href);
+        url.searchParams.set('videoId', id);
+        url.searchParams.set('bridgeId', session);
+        iframe = document.createElement('iframe');
+        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+        iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
+        iframe.src = url.href;
+        var host = document.getElementById('frame');
+        host.textContent = '';
+        host.appendChild(iframe);
+        log('Loading: ' + id + ', bridge origin: ' + url.origin);
+      });
+      document.getElementById('play').addEventListener('click', function () { send('play'); });
+      document.getElementById('pause').addEventListener('click', function () { send('pause'); });
+      window.addEventListener('message', function (event) {
+        if (!iframe || event.source !== iframe.contentWindow || event.origin !== location.origin) return;
+        if (!event.data || event.data.bridgeId !== session) return;
+        var type = event.data.type;
+        if (type === 'time') return;
+        log(type + ' ' + JSON.stringify(event.data.data || {}));
+      });
+    })();
+  </script>
+</body>
+</html>

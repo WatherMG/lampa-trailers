@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <!-- IMPORTANT: this document must be served from real HTTPS origin. -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Lampa Trailer Fix — YouTube Bridge</title>
+  <style>
+    html, body, #yt { margin:0; width:100%; height:100%; overflow:hidden; background:#000; }
+    #yt iframe { width:100% !important; height:100% !important; border:0; }
+  </style>
+</head>
+<body>
+  <div id="yt"></div>
+  <script>
+    (function () {
+      'use strict';
+      var params = new URL(location.href).searchParams;
+      var videoId = params.get('videoId') || '';
+      var bridgeId = params.get('bridgeId') || '';
+      var player = null;
+      var ready = false;
+      var tick = null;
+      var dead = false;
+
+      function send(type, data) {
+        if (dead) return;
+        try { window.parent.postMessage({ bridgeId: bridgeId, type: type, data: data || {} }, '*'); }
+        catch (e) {}
+      }
+      function time() {
+        if (!ready || !player) return;
+        try { send('time', { currentTime: player.getCurrentTime() || 0,
+          duration: player.getDuration() || 0,
+          quality: player.getPlaybackQuality ? player.getPlaybackQuality() : '' }); }
+        catch (e) {}
+      }
+      function fail(code) { send('error', { code: String(code || 'unknown') }); }
+      if (!/^[A-Za-z0-9_-]{11}$/.test(videoId) || !/^ltf_[A-Za-z0-9_]+$/.test(bridgeId)) {
+        fail('invalid-arguments');
+        return;
+      }
+
+      window.onYouTubeIframeAPIReady = function () {
+        if (dead) return;
+        try {
+          player = new YT.Player('yt', {
+            width: '100%', height: '100%', videoId: videoId,
+            playerVars: {
+              enablejsapi: 1,
+              origin: location.origin,
+              autoplay: 0,
+              controls: 0,
+              playsinline: 1,
+              rel: 0
+            },
+            events: {
+              onReady: function () {
+                ready = true;
+                send('ready');
+                tick = setInterval(time, 500);
+              },
+              onStateChange: function (e) { send('state', { state: e.data }); time(); },
+              onPlaybackQualityChange: time,
+              onError: function (e) { fail(e.data); },
+              onAutoplayBlocked: function () { fail('autoplay'); }
+            }
+          });
+        } catch (e) { fail('yt-api-init'); }
+      };
+
+      window.addEventListener('message', function (event) {
+        // Commands only from the parent iframe owner, tagged with this session ID.
+        if (event.source !== window.parent || !event.data || event.data.bridgeId !== bridgeId) return;
+        var command = event.data.type;
+        var d = event.data.data || {};
+        if (command === 'destroy') {
+          dead = true;
+          clearInterval(tick);
+          try { if (player) player.destroy(); } catch (e) {}
+          player = null;
+          return;
+        }
+        if (!ready || !player) return;
+        try {
+          if (command === 'play') player.playVideo();
+          else if (command === 'pause') player.pauseVideo();
+          else if (command === 'seekTo') player.seekTo(Number(d.time) || 0, true);
+          else if (command === 'setVolume') player.setVolume(Math.max(0, Math.min(100, Number(d.volume) || 0)));
+          else if (command === 'mute') player.mute();
+          else if (command === 'unMute') player.unMute();
+        } catch (e) { fail('yt-api-command'); }
+      });
+    })();
+  </script>
+  <script src="https://www.youtube.com/iframe_api" async></script>
+</body>
+</html>
