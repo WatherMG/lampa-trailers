@@ -20,6 +20,8 @@ function harness(options = {}) {
   const launches = [];
   const settings = [];
   const components = [];
+  const unifiedButtons = [];
+  const selectedMenus = [];
   const timers = new Map();
   const commands = [];
   let nextTimer = 0;
@@ -50,6 +52,8 @@ function harness(options = {}) {
       close() { closeCount++; }
     },
     PlayerVideo: { registerTube(handler) { tubes.push(handler); } },
+    Listener: { follow(name, fn) { (events['lampa:' + name] ||= []).push(fn); } },
+    Select: { show(menu) { selectedMenus.push(menu); } },
     SettingsApi: {
       addParam(param) { settings.push(param); },
       addComponent(component) { components.push(component); }
@@ -86,6 +90,9 @@ function harness(options = {}) {
     }
   };
   function $(html) {
+    if (typeof html === 'string' && html.includes('view--ltf-unified')) {
+      return { length: 1, handlers: {}, on(name, fn) { this.handlers[name] = fn; return this; } };
+    }
     assert.match(html, /player-video__youtube/);
     root = { appendChild(frame) { this.frame = frame; } };
     return { 0: root, remove() {} };
@@ -100,7 +107,21 @@ function harness(options = {}) {
   vm.runInNewContext(plugin, sandbox, { filename: 'trailers.js' });
   return {
     api: fakeWindow.LampaTrailerFix, alias: fakeWindow.LampaTrailers, Lampa, tubes, played, requests, xhrs,
-    launches, notices, settings, components, timers, commands,
+    launches, notices, settings, components, timers, commands, unifiedButtons, selectedMenus,
+    fireFull(data) {
+      const original = { length: 1, addClass() { this.hidden = true; return this; }, before(btn) { unifiedButtons.push(btn); } };
+      const rutube = { length: 0, addClass() { return this; } };
+      const render = { find(selector) {
+        if (selector === '.view--ltf-unified') return { length: unifiedButtons.length };
+        if (selector === '.view--trailer') return original;
+        if (selector === '.view--rutube_trailer') return rutube;
+        if (selector === '.full-start__button') return { length: 1 };
+        return { length: 0 };
+      } };
+      const e = { type: 'complite', object: { method: 'movie', activity: { render() { return render; } } }, data };
+      for (const listener of events['lampa:full'] || []) listener(e);
+      return { original, e };
+    },
     get root() { return root; },
     get closeCount() { return closeCount; },
     message(msg) { for (const listener of events.message || []) listener(msg); },
@@ -279,4 +300,29 @@ test('unified RuTube search discards unavailable and non-RuTube videos', () => {
 test('YouTube bridge accepts playback speed commands', () => {
   assert.match(bridge, /command === 'setPlaybackRate'/);
   assert.match(bridge, /controls:\s*1/);
+});
+
+
+test('combined card button shows YouTube and RuTube as separate selectable sections', () => {
+  const h = harness();
+  const rutubeId = 'a'.repeat(32);
+  const card = h.fireFull({
+    movie: { id: 278, title: 'Побег из Шоушенка', release_date: '1994-09-23' },
+    videos: { results: [{ name: 'Official Trailer', key: 'dQw4w9WgXcQ', iso_639_1: 'en' }] }
+  });
+  assert.equal(card.original.hidden, true);
+  assert.equal(h.unifiedButtons.length, 1);
+  h.unifiedButtons[0].handlers['hover:enter']();
+  assert.equal(h.requests.length, 1);
+  assert.match(h.requests[0].url, /trailer\.rootu\.top\/search\/movie\/0000278\.json/);
+  h.requests[0].success([{
+    title: 'Побег из Шоушенка трейлер', video_url: 'https://rutube.ru/video/' + rutubeId,
+    duration: 120
+  }]);
+  assert.equal(h.selectedMenus.length, 1);
+  const items = h.selectedMenus[0].items;
+  assert.equal(items[0].title, 'YouTube');
+  assert.match(items[1].subtitle, /^\[YouTube\]/);
+  assert.equal(items[2].title, 'RuTube');
+  assert.match(items[3].subtitle, /^\[RuTube\]/);
 });
