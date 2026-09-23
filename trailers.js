@@ -38,7 +38,7 @@
     } catch (e) { /* diagnostic URL remains empty */ }
   }
   var bridgeUrl = window.LAMPA_TRAILER_BRIDGE_URL ||
-    (pluginUrl ? new URL('youtube-bridge.html', pluginUrl).href : '');
+    (pluginUrl ? new URL('youtube-bridge.html?v=' + encodeURIComponent(VERSION), pluginUrl).href : '');
   var savedMode = Lampa.Storage && Lampa.Storage.get ? Lampa.Storage.get('ltf_youtube_mode', 'auto') : 'auto';
   var savedQuality = Lampa.Storage && Lampa.Storage.get ? Lampa.Storage.get('ltf_rutube_quality', true) : true;
   var savedAppId = Lampa.Storage && Lampa.Storage.get ? Lampa.Storage.get('ltf_youtube_app_id', 'youtube.leanback.v4') : 'youtube.leanback.v4';
