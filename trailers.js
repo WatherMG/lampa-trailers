@@ -366,7 +366,8 @@
 
     root.addEventListener = listener.follow.bind(listener);
     root.canPlayType = function () { return 'maybe'; };
-    root.resize = function () {};\n    root.speed = function (value) { post('setPlaybackRate', { rate: value }); };
+    root.resize = function () {};
+    root.speed = function (value) { post('setPlaybackRate', { rate: value }); };
     root.load = function () {
       if (frame || !bridgeUrl) {
         if (!bridgeUrl) signalError('bridge не настроен: опубликуй оба файла на HTTPS');
