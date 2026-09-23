@@ -29,6 +29,8 @@ jobs:
           node --check test/trailers.test.js
           node --check scripts/build.mjs
           node --check scripts/verify-dist.mjs
+          node --check scripts/check-html.mjs
+          node scripts/check-html.mjs
       - name: Run integration tests
         run: node --test test/*.test.js
       - name: Assemble allowlisted Pages artifact
