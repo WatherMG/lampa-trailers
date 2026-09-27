@@ -14,7 +14,7 @@
     return;
   }
 
-  var VERSION = '0.4.1-beta';
+  var VERSION = '0.4.2-beta';
   var INTERNAL_HOST = 'lampa-trailer-fix.invalid';
   var YT_PATH = '/youtube/';
   var tag = document.currentScript;
@@ -453,7 +453,10 @@
           // Do not discard the selected trailer when the installed app cannot open.
           Lampa.Player.play(Object.assign({}, data, {
             url: 'https://' + INTERNAL_HOST + YT_PATH + id,
-            youtube: false, __trailerFixBypass: true
+            youtube: false,
+            // See the main YouTube playback path above: this only suppresses
+            // Lampa/CUB preroll; it does not switch to the IPTV player.
+            iptv: true, __trailerFixBypass: true
           }));
         });
         return;
@@ -471,7 +474,14 @@
     if (!id || !config.rutubeEnabled || !config.rutubeQuality || typeof Lampa.Reguest !== 'function') return;
     event.abort();
     counters.rutube++;
-    var originalData = Object.assign({}, data, { __trailerFixBypass: true });
+    var originalData = Object.assign({}, data, {
+      // RuTube trailers are direct video playback, but Lampa's built-in
+      // preroll classifier treats IPTV as an ad-free playback type.
+      // Player.play() still uses the normal video player; Player.iptv() is
+      // never called here.
+      iptv: true,
+      __trailerFixBypass: true
+    });
     function fallback(reason) {
       counters.rutubeFallback++;
       log('RuTube: original TVIGL player fallback', reason);
