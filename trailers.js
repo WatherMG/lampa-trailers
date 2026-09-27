@@ -391,8 +391,7 @@
         if (!bridgeUrl) signalError('bridge не настроен: опубликуй оба файла на HTTPS');
         return;
       }
-      videoId = src.match(/\/youtube\/([A-Za-z0-9_-]{11})(?:[/?#]|$)/i);
-      videoId = videoId && videoId[1];
+      videoId = youtubeId(src);
       if (!videoId) return signalError('invalid YouTube video ID');
       var url = new URL(bridgeUrl);
       if (url.protocol !== 'https:') return signalError('bridge должен работать по HTTPS');
@@ -452,15 +451,17 @@
           notify(reason);
           // Do not discard the selected trailer when the installed app cannot open.
           Lampa.Player.play(Object.assign({}, data, {
-            url: 'https://' + INTERNAL_HOST + YT_PATH + id,
-            youtube: false, __trailerFixBypass: true
+            url: data.url,
+            youtube: true, __trailerFixBypass: true
           }));
         });
         return;
       }
       var playData = Object.assign({}, data, {
-        url: 'https://' + INTERNAL_HOST + YT_PATH + id,
-        youtube: false,
+        // Keep the real YouTube URL so Lampa/CUB recognizes this as YouTube.
+        // The registered Tube handler still routes it through our bridge.
+        url: data.url,
+        youtube: true,
         __trailerFixBypass: true
       });
       Lampa.Player.play(playData);
