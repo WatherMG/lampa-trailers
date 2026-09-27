@@ -464,6 +464,9 @@
       var playData = Object.assign({}, data, {
         url: 'https://' + INTERNAL_HOST + YT_PATH + id,
         youtube: false,
+        // Lampa uses this flag in IMA.getMediaType() to skip its own preroll.
+        // It does not select the IPTV player; Lampa.Player.play() remains unchanged.
+        iptv: true,
         __trailerFixBypass: true
       });
       Lampa.Player.play(playData);
@@ -497,7 +500,7 @@
         // Pass the intact master playlist to Lampa's HLS handler instead.
         if (/^#EXT-X-MEDIA:\s*TYPE=AUDIO\b/im.test(manifest)) {
           Lampa.Player.play(Object.assign({}, originalData, {
-            url: master, iptv: false, iptv_player: false
+            url: master, iptv: true, iptv_player: false
           }));
           return;
         }
@@ -514,7 +517,7 @@
         var current = Object.assign({}, originalData, {
           url: first.url,
           __ltfQualityMap: qualityMap,
-          iptv: false,
+          iptv: true,
           iptv_player: false
         });
         log('RuTube variants', qualityMap);
