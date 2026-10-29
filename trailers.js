@@ -14,7 +14,7 @@
     return;
   }
 
-  var VERSION = '0.4.2-beta';
+  var VERSION = '0.4.3-beta';
   var INTERNAL_HOST = 'lampa-trailer-fix.invalid';
   var YT_PATH = '/youtube/';
   var tag = document.currentScript;
@@ -547,9 +547,37 @@
   // A single card action with visibly separated YouTube and RuTube sources.
   // Search is independent of TVIGL, which can remain disabled on webOS.
   var unifiedCardGeneration = 0;
+  var unifiedRequestGeneration = 0;
   var rutubeSearchCache = {};
   function trailerCardTitle(movie) {
     return movie.title || movie.name || movie.original_title || movie.original_name || '';
+  }
+  // RuTube's generic search can return unrelated popular films. Use only
+  // results whose visible title identifies the selected TMDB movie/series.
+  function normalizedTitle(value) {
+    return String(value || '').toLowerCase().replace(/ё/g, 'е')
+      .replace(/&/g, ' and ').replace(/[^a-zа-я0-9]+/gi, ' ')
+      .trim().replace(/\s+/g, ' ');
+  }
+  function matchesMovieTrailer(movie, row, strictSearch) {
+    var title = normalizedTitle(row && (row.title || row.name || row.video_title));
+    var candidates = [movie.title, movie.name, movie.original_title, movie.original_name]
+      .map(normalizedTitle).filter(Boolean);
+    if (!candidates.length) return false;
+    // Unnamed/generic entries are acceptable only from the TMDB-ID-indexed
+    // catalogue, never from a generic keyword search.
+    if (!title) return !strictSearch;
+    var generic = /^(?:(?:официальный|official|русский|на русском|новый|new|первый|first|финальный|final|полный|full)\s+)*(?:трейлер|тизер|trailer|teaser|промо|анонс)(?:\s+(?:на русском|русский|official|официальный|hd|fhd|4k|1080p|720p|\d+))*$/i.test(title);
+    if (generic && !strictSearch) return true;
+    var matched = candidates.some(function (candidate) {
+      return (' ' + title + ' ').indexOf(' ' + candidate + ' ') !== -1;
+    });
+    if (!matched) return false;
+    // Generic RuTube search results must be promotional videos, not full
+    // movies, reviews or unrelated videos that happen to mention the title.
+    if (strictSearch && !/(?:^| )(?:трейлер|тизер|trailer|teaser|промо|анонс)(?: |$)/i.test(title)) return false;
+    if (/(?:^| )(?:обзор|реакция|review|reaction|разбор|подборка|топ|top)(?: |$)/i.test(title)) return false;
+    return true;
   }
   function validRutubeTrailers(data) {
     if (typeof data === 'string') {
@@ -591,9 +619,8 @@
         if (used) return;
         used = true;
         try { if (network.clear) network.clear(); } catch (e) {}
-        var rows = validRutubeTrailers(data);
-        if (index === 1) rows = rows.filter(function (v) {
-          return /(?:трейлер|trailer|тизер|teaser)/i.test(v.title || '');
+        var rows = validRutubeTrailers(data).filter(function (row) {
+          return matchesMovieTrailer(movie, row, index === 1);
         });
         if (rows.length) {
           rutubeSearchCache[cacheKey] = { rows: rows, until: Date.now() + 15 * 60000 };
@@ -636,10 +663,11 @@
   }
   function showUnifiedTrailers(event, token) {
     var movie = event.data && event.data.movie;
-    if (!movie) return;
+    if (!movie || token !== unifiedCardGeneration) return;
+    var requestToken = ++unifiedRequestGeneration;
 
     function showSources(rows) {
-      if (token !== unifiedCardGeneration) return;
+      if (token !== unifiedCardGeneration || requestToken !== unifiedRequestGeneration) return;
       var youtube = config.youtubeEnabled ? youtubeCardItems(event.data && event.data.videos) : [];
       var rutube = config.rutubeEnabled ? rutubeCardItems(rows) : [];
       var sources = config.sourceOrder === 'rutube_first' ?
@@ -712,7 +740,8 @@
     rutubeId: rutubeId,
     youtubeCardItems: youtubeCardItems,
     rutubeCardItems: rutubeCardItems,
-    validRutubeTrailers: validRutubeTrailers
+    validRutubeTrailers: validRutubeTrailers,
+    matchesMovieTrailer: matchesMovieTrailer
   };
   window.LampaTrailers = window.LampaTrailerFix; // Public alias; keep the legacy API compatible.
   console.info('[LampaTrailers] v' + VERSION + ', bridge=' + bridgeUrl + ', install order: TVIGL/CUB then Lampa Trailers');
