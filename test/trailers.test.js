@@ -444,7 +444,7 @@ test('source order can be changed while keeping both providers enabled', () => {
     videos: { results: [{ name: 'YT', key: 'dQw4w9WgXcQ' }] }
   });
   h.unifiedButtons[0].handlers['hover:enter']();
-  h.requests[0].success([{ title: 'RT', video_url: 'https://rutube.ru/video/' + 'f'.repeat(32) }]);
+  h.requests[0].success([{ title: 'Movie трейлер', video_url: 'https://rutube.ru/video/' + 'f'.repeat(32) }]);
   assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'Movie трейлер', 'YouTube', 'YT']);
 });
 
