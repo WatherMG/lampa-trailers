@@ -140,7 +140,7 @@ function sampleManifest() {
 
 test('bridge URL resolves to the installed plugin origin', () => {
   const h = harness();
-  assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html?v=0.4.2-beta');
+  assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html?v=0.4.3-beta');
   assert.equal(h.components[0].component, 'ltf_settings');
   assert.strictEqual(h.alias, h.api);
   assert.equal(h.settings.length, 8);
@@ -148,7 +148,7 @@ test('bridge URL resolves to the installed plugin origin', () => {
 
 test('cached inline script obtains original URL from the plugin list', () => {
   const h = harness({ inline: true, installed: [{ url: PLUGIN_URL, status: 1 }] });
-  assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html?v=0.4.2-beta');
+  assert.equal(h.api.bridgeUrl, 'https://example.github.io/lampa-trailers/youtube-bridge.html?v=0.4.3-beta');
 });
 
 test('HLS parser resolves variants, selects bitrate, and does not duplicate labels', () => {
@@ -433,7 +433,7 @@ test('stored source preferences disable YouTube and can display RuTube first', (
   h.unifiedButtons[0].handlers['hover:enter']();
   const id = 'e'.repeat(32);
   h.requests[0].success([{ title: 'Movie трейлер', video_url: 'https://rutube.ru/video/' + id }]);
-  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'RT']);
+  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'Movie трейлер']);
 });
 
 test('source order can be changed while keeping both providers enabled', () => {
@@ -445,7 +445,7 @@ test('source order can be changed while keeping both providers enabled', () => {
   });
   h.unifiedButtons[0].handlers['hover:enter']();
   h.requests[0].success([{ title: 'RT', video_url: 'https://rutube.ru/video/' + 'f'.repeat(32) }]);
-  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'RT', 'YouTube', 'YT']);
+  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'Movie трейлер', 'YouTube', 'YT']);
 });
 
 test('disabled sources do not intercept playback from another plugin', () => {
