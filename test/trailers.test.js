@@ -432,7 +432,7 @@ test('stored source preferences disable YouTube and can display RuTube first', (
   });
   h.unifiedButtons[0].handlers['hover:enter']();
   const id = 'e'.repeat(32);
-  h.requests[0].success([{ title: 'RT', video_url: 'https://rutube.ru/video/' + id }]);
+  h.requests[0].success([{ title: 'Movie трейлер', video_url: 'https://rutube.ru/video/' + id }]);
   assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'RT']);
 });
 
@@ -462,4 +462,44 @@ test('disabled sources do not intercept playback from another plugin', () => {
   assert.equal(h.requests.length, 0);
   assert.equal(h.selectedMenus.length, 0);
   assert.match(h.notices.at(-1), /Включите YouTube или RuTube/);
+});
+
+test('RuTube metadata filter rejects unrelated trailers and review compilations', () => {
+  const h = harness();
+  const movie = { title: 'Побег из Шоушенка', original_title: 'The Shawshank Redemption' };
+  const match = (title, strict) => h.api.matchesMovieTrailer(movie, { title }, strict);
+  assert.equal(match('Побег из Шоушенка — официальный трейлер', true), true);
+  assert.equal(match('The Shawshank Redemption trailer', true), true);
+  assert.equal(match('Чужой — трейлер', true), false);
+  assert.equal(match('Трейлер', true), false);
+  assert.equal(match('Побег из Шоушенка — обзор фильма', true), false);
+  assert.equal(match('Побег из Шоушенка — полный фильм', true), false);
+  assert.equal(match('Трейлер', false), true);
+});
+
+test('RuTube generic fallback must never show trailers of unrelated films', () => {
+  const h = harness({ storage: { ltf_youtube_enabled: false } });
+  const id = '1'.repeat(32);
+  h.fireFull({ movie: { id: 278, title: 'Побег из Шоушенка', release_date: '1994-09-23' }, videos: { results: [] } });
+  h.unifiedButtons[0].handlers['hover:enter']();
+  h.requests[0].success([]);
+  assert.equal(h.requests.length, 2);
+  h.requests[1].success({ results: [
+    { title: 'Чужой трейлер', video_url: 'https://rutube.ru/video/' + id },
+    { title: 'Побег из Шоушенка трейлер', video_url: 'https://rutube.ru/video/' + '2'.repeat(32) }
+  ] });
+  assert.equal(h.selectedMenus.length, 1);
+  assert.deepEqual(Array.from(h.selectedMenus[0].items, item => item.title), ['RuTube', 'Побег из Шоушенка трейлер']);
+});
+
+test('stale responses from earlier openings of the same card cannot override the menu', () => {
+  const h = harness();
+  h.fireFull({ movie: { id: 278, title: 'Movie' }, videos: { results: [] } });
+  const click = h.unifiedButtons[0].handlers['hover:enter'];
+  click();
+  click();
+  h.requests[0].success([{ title: 'Movie трейлер', video_url: 'https://rutube.ru/video/' + '3'.repeat(32) }]);
+  assert.equal(h.selectedMenus.length, 0);
+  h.requests[1].success([{ title: 'Movie трейлер', video_url: 'https://rutube.ru/video/' + '4'.repeat(32) }]);
+  assert.equal(h.selectedMenus.length, 1);
 });
