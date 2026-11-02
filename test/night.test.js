@@ -39,7 +39,7 @@ test('single Night menu with UI and subtitle settings', () => {
   assert.ok(h.params.some(p => p.param.name === 'night_sdr_native'));
   assert.ok(h.params.some(p => p.param.name === 'night_hdr_panel'));
   assert.ok(h.params.some(p => p.param.name === 'night_sdr_subs'));
-  assert.equal(h.window.LampaNight.version, '1.0.0-night.1');
+  assert.equal(h.window.LampaNight.version, '1.1.0');
 });
 
 test('SDR / Filmmaker dims just controls and HTML subtitles', () => {
@@ -89,4 +89,25 @@ test('unsupported user input never enters generated CSS', () => {
   assert.doesNotMatch(css, /invert\(1\)/);
   assert.doesNotMatch(css, /opacity:0/);
   assert.match(css, /#594d43/);
+});
+
+
+test('all player chrome and player-scoped popup menus share Night palette', () => {
+  const h = harness({night_palette:'graphite',night_sdr_panel:'35'});
+  const css = h.window.LampaNight.css();
+  assert.match(css, /\.player \.player-info,\.player \.player-footer\{filter:brightness\(0\.35\)/);
+  assert.match(css, /\.player \.player-info__time/);
+  assert.match(css, /\.player \.player-info__values/);
+  assert.match(css, /body\.player--viewing \.selectbox__content/);
+  assert.match(css, /body\.player--viewing \.selectbox-item\.focus/);
+  assert.match(css, /\.player \.player-panel/);
+  assert.doesNotMatch(css, /body \.selectbox__content/);
+});
+
+test('subtitle tint supports warm colors without styling video frame', () => {
+  const h = harness({night_subs_tint:'amber'});
+  const css = h.window.LampaNight.css();
+  assert.match(css,/\.player \.player-video__subtitles-text,\.player \.player-video__subtitles-text \*\{color:#c1a87f/);
+  assert.match(css,/\.player video::cue\{color:#c1a87f/);
+  assert.doesNotMatch(css, /\.player-video__video\{filter/);
 });
