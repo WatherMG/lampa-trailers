@@ -1,5 +1,5 @@
 /*!
- * Lampa Night v1.2.0: one-file HDR subtitle + low-glare player plugin.
+ * Lampa Night v1.3.0: one-file HDR subtitle + low-glare player plugin.
  * Adaptive Subtitles © 2026 emoorpheus, MIT.
  * Night UI © 2026 WatherMG, contributors, MIT.
  * Upstream license: https://github.com/emoorpheus/lampa-adaptive-subtitles/blob/main/LICENSE
@@ -1056,7 +1056,7 @@
     s += '.player .player-info .value--size span,.player .player-info .value--pieces span{background-color:' + p.bg + ' !important;}';
     s += '.player .player-info .value--pieces span.active{background-color:' + p.accent + ' !important;}';
     s += '.player .player-info__title,.player .player-info__name,.player .player-info__time,.player .player-info__time-end,.player .player-info__values,.player .player-footer-card__title,.player .player-footer-card__text{color:' + p.text + ' !important;}';
-    s += 'body.player--viewing .selectbox__content,body.player--viewing .modal__content{background:' + p.bg + ' !important;color:' + p.text + ' !important;filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;}';
+    s += scope + ' .selectbox__content,' + scope + ' .modal__content{background:' + p.bg + ' !important;color:' + p.text + ' !important;filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;}';
     s += 'body.player--viewing .selectbox__title,body.player--viewing .selectbox-item__title,body.player--viewing .selectbox-item__subtitle{color:' + p.text + ' !important;}';
     s += 'body.player--viewing .selectbox-item.focus,body.player--viewing .selectbox-item.picked{background:' + p.focus + ' !important;color:' + p.ink + ' !important;}';
     s += 'body.player--viewing .selectbox-item.selected:after,body.player--viewing .selectbox-item.picked:after{border-color:' + p.accent + ' !important;}';
@@ -1065,7 +1065,8 @@
     // the focused selectors; background of the container alone is not enough.
     s += scope + ' .selectbox__content,' + scope + ' .modal__content{' +
       'background-color:#151719 !important;backdrop-filter:none !important;' +
-      'color:' + p.text + ' !important;}';
+      'color:' + p.text + ' !important;filter:brightness(' + dim + ') !important;' +
+      '-webkit-filter:brightness(' + dim + ') !important;}';
     s += scope + ' .selectbox-item,' + scope + ' .selectbox-item__title,' +
       scope + ' .selectbox-item__subtitle,' + scope + ' .selectbox__title,' +
       scope + ' .settings-param-title{color:' + p.text + ' !important;}';
@@ -1094,7 +1095,12 @@
     s += '.player.player--loading .player-panel__timeline:after{background:' + p.accent + ' !important;}';
     s += '.player .player-panel__timeline-segment--ad{background:rgba(170,120,70,.35) !important;}';
     s += '.player .player-panel__timeline-segment--skip{background:rgba(100,140,160,.35) !important;}';
-    s += '.player .player-video__paused{background:rgba(45,45,45,.5) !important;filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;}';
+    s += '.player .player-video__paused,.player .player-video__loader{' +
+      'background-color:rgba(40,43,47,.65) !important;filter:brightness(' + dim + ') !important;' +
+      '-webkit-filter:brightness(' + dim + ') !important;}';
+    s += '.player .player-video__loader{background-blend-mode:multiply !important;}';
+    s += '.player .player-video__noise-text,.player .player-video__backwork-icon,.player .player-video__forward-icon{' +
+      'filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;}';
     if (String(read('night_focus_outline','true')) !== 'false') {
       s += '.player .player-panel .button.focus{outline:2px solid ' + p.accent + ' !important;outline-offset:2px;}';
     }
@@ -1225,7 +1231,7 @@
     apply();
     if (window.addEventListener) window.addEventListener('adaptive_subs:profile', apply, false);
   }
-  window.LampaNight = {version:'1.2.0', apply:apply, css:css, profile:profile};
+  window.LampaNight = {version:'1.3.0', apply:apply, css:css, profile:profile};
   if (!window.Lampa || !Lampa.Listener) {
     console.error('[Lampa Night] Lampa APIs unavailable');
     return;
@@ -1249,6 +1255,19 @@
   var LEVELS = {'5':'5%','10':'10%','15':'15%','20':'20%','25':'25%','35':'35%','45':'45%','55':'55%','65':'65%','75':'75%','85':'85%','100':'100% (без затемнения)'};
   var HDR_LEVELS = {'#9a9a9a':'60%','#8a8a8a':'54%','#7a7a7a':'48%','#666666':'40%','#555555':'33%','#404040':'25%'};
   var HDR_OVERRIDES = {'same':'Как основной'};
+  // webOS accepts an unsigned 8-bit alpha (0=fully transparent, 255=opaque).
+  // UI values are exact integer alpha values, not an extra dimming multiplier.
+  var NATIVE_HDR_OPACITY = {
+    '0':'0% — скрыто','5':'2%','13':'5%','26':'10%','38':'15%',
+    '51':'20%','64':'25%','77':'30%','102':'40%','128':'50%',
+    '153':'60%','191':'75%','230':'90%','255':'100%'
+  };
+  var NATIVE_SDR_OPACITY = {
+    '0':'0% — скрыто','1':'1%','2':'2%','5':'5%',
+    '10':'10%','15':'15%','20':'20%','25':'25%','35':'35%',
+    '45':'45%','55':'55%','60':'60%','65':'65%','75':'75%',
+    '85':'85%','100':'100%'
+  };
   var groups = [
     {name:'panel', title:'Интерфейс: панель, часы и меню'},
     {name:'html', title:'HTML-субтитры и размер'},
@@ -1278,12 +1297,12 @@
     {group:'hdr',key:'adaptive_subs_level_dv',title:'Dolby Vision',values:HDR_OVERRIDES,def:'same'},
     {group:'hdr',key:'adaptive_subs_level_hlg',title:'HLG',values:HDR_OVERRIDES,def:'same'},
     {group:'native',key:'adaptive_subs_webos_size',title:'Нативный размер LG',values:{default:'Как в Lampa','0':'0 — минимальный','1':'1','2':'2','3':'3','4':'4 — максимальный'},def:'default'},
-    {group:'native',key:'adaptive_subs_webos_opacity',title:'HDR: непрозрачность LG',values:{'191':'75%','153':'60%','128':'50%','102':'40%','77':'30%'},def:'128'},
-    {group:'native',key:'night_sdr_native',title:'SDR: непрозрачность LG',values:LEVELS,def:'60'},
-    {group:'native',key:'night_native_color',title:'Цвет LG (код палитры webOS)',values:{default:'Как в Lampa','0':'Код 0','1':'Код 1','2':'Код 2','3':'Код 3','4':'Код 4','5':'Код 5'},def:'default'},
+    {group:'native',key:'adaptive_subs_webos_opacity',title:'HDR: непрозрачность LG',values:NATIVE_HDR_OPACITY,def:'128'},
+    {group:'native',key:'night_sdr_native',title:'SDR: непрозрачность LG',values:NATIVE_SDR_OPACITY,def:'60'},
+    {group:'native',key:'night_native_color',title:'Цвет LG (код палитры webOS)',values:{default:'Как в Lampa','0':'Жёлтый (0)','1':'Красный (1)','2':'Белый (2)','3':'Зелёный (3)','4':'Синий (4)','5':'Серый (5)',black:'Чёрный (эксп., другой метод)'},def:'default'},
     {group:'native',key:'night_native_bg_color',title:'Цвет подложки LG',values:{default:'Как в Lampa',black:'Чёрный',white:'Белый',yellow:'Жёлтый',red:'Красный',green:'Зелёный',blue:'Синий'},def:'default'},
     {group:'native',key:'night_native_bg_opacity',title:'Непрозрачность подложки LG',values:{default:'Как в Lampa','0':'0%','64':'25%','128':'50%','191':'75%','255':'100%'},def:'default'},
-    {group:'native',key:'night_native_position',title:'Позиция LG',values:{default:'Как в Lampa','-3':'-3','-2':'-2','-1':'-1','0':'0','1':'1','2':'2','3':'3','4':'4'},def:'default'},
+    {group:'native',key:'night_native_position',title:'Позиция LG',values:{default:'Как в Lampa','-4':'−4 — эксперимент (вне поддерживаемого диапазона)','-3':'−3 — нижняя граница','-2':'-2','-1':'-1','0':'0','1':'1','2':'2','3':'3','4':'4'},def:'default'},
     {group:'detection',key:'adaptive_subs_mode',title:'HDR/SDR профиль',values:{auto:'Автоматически',hdr:'Всегда HDR',sdr:'Всегда SDR'},def:'auto'},
     {group:'detection',key:'adaptive_subs_ffp',title:'Проверять TorrServer /ffp',values:{'true':'Да','false':'Нет'},def:'true'},
     {group:'detection',key:'adaptive_subs_hls',title:'Проверять HLS VIDEO-RANGE',values:{'true':'Да','false':'Нет'},def:'true'},
@@ -1350,6 +1369,12 @@
     for (var i=0; i<methods.length; i++) {
       var spec=methods[i], val=read(spec[0], 'default');
       if (val === 'default') continue;
+      if (spec[0] === 'night_native_color' && val === 'black') {
+        // setSubtitleColor only exposes the documented 0..5 palette.
+        // CharacterColor supports an additional "black" option on some models.
+        nativeRequest('setSubtitleCharacterColor', 'charColor', 'black');
+        continue;
+      }
       if (spec[0] === 'night_native_color' || spec[0] === 'night_native_bg_opacity' || spec[0] === 'night_native_position') val=parseInt(val,10);
       nativeRequest(spec[1],spec[2],val);
     }
@@ -1474,15 +1499,37 @@
       onSelect:function () { rootMenu(active); }
     });
   }
+  // Lampa re-initializes webOS subtitle parameters after mediaId is assigned,
+  // after track metadata arrives and sometimes again after loading a new item.
+  // Applying only once on the first mediaId races with the native reset.
+  // A bounded replay per player session restores the saved Night preferences.
+  function replayNative(seq, delay) {
+    setTimeout(function () {
+      if (seq !== activeWatch || !Lampa.Player.opened || !Lampa.Player.opened()) return;
+      applyNative();
+    }, delay);
+  }
   function watchNative() {
-    var seq=++activeWatch, tries=0,previous=null;
+    var seq=++activeWatch, tries=0, previous=null;
     function tick() {
-      if(seq!==activeWatch || !Lampa.Player.opened || !Lampa.Player.opened()) return;
+      if (seq!==activeWatch || !Lampa.Player.opened || !Lampa.Player.opened()) return;
       var id=mediaId();
-      if(id && id!==previous) { previous=id;applyNative(); }
-      if(++tries<40) setTimeout(tick,500);
+      if (id && id!==previous) {
+        previous=id;
+        replayNative(seq,100);   // mediaId appeared
+        replayNative(seq,900);   // Lampa initialization / saved track
+        replayNative(seq,2400);  // late webOS metadata
+        replayNative(seq,5500);  // slow media server
+      }
+      if (++tries<80) setTimeout(tick,500);
     }
     tick();
+  }
+  function onNativeTracks() {
+    if (!Lampa.Player.opened || !Lampa.Player.opened()) return;
+    var seq=activeWatch;
+    replayNative(seq,300);
+    replayNative(seq,1200);
   }
   function init() {
     if (on) return; on=true;
@@ -1491,9 +1538,15 @@
       Lampa.Player.listener.follow('start',watchNative);
       Lampa.Player.listener.follow('destroy',function(){activeWatch++;});
     }
+    if (Lampa.PlayerVideo && Lampa.PlayerVideo.listener && Lampa.PlayerVideo.listener.follow) {
+      // These events are emitted for every embedded webOS track list, including
+      // switching to the next episode without restarting the app.
+      Lampa.PlayerVideo.listener.follow('webos_subs',onNativeTracks);
+      Lampa.PlayerVideo.listener.follow('loadedmetadata',onNativeTracks);
+    }
   }
   window.LampaNightMenu = {
-    version:'1.2.0',
+    version:'1.3.0',
     open:function(){rootMenu(null);},
     nativeInfo:currentNativeInfo,applyNative:applyNative,
     applyImmediately:applyImmediately, nativeStatus:function(){return nativeState;},
