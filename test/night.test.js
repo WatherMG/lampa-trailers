@@ -12,7 +12,9 @@ function harness(overrides = {}) {
   const params = [];
   let webosCalls = 0;
   const adaptive = { state: { profile: 'sdr', kind: 'sdr' }, _test: { applyWebos() { webosCalls++; } } };
+  const bodyClasses = new Set();
   const document = {
+    body: {classList:{add(v){bodyClasses.add(v);},remove(v){bodyClasses.delete(v);}}},
     getElementById(id) { return styles[id] || null; },
     createElement(tag) { return { tagName: tag, id: '', textContent: '' }; },
     head: { appendChild(node) { styles[node.id] = node; } }
@@ -20,7 +22,8 @@ function harness(overrides = {}) {
   const Lampa = {
     Storage: { get(key, fallback) { return key in data ? data[key] : fallback; } },
     SettingsApi: { addParam(p) { params.push(p); } },
-    Listener: { follow() {} }
+    Listener: { follow() {} },
+    Player: {opened(){return false;},listener:{follow(name,cb){callbacks[name]=cb;}}}
   };
   const listeners = {};
   const window = {
@@ -29,7 +32,7 @@ function harness(overrides = {}) {
     addEventListener(name, cb) { listeners[name] = cb; }
   };
   vm.runInNewContext(source, { window, document, Lampa, console });
-  return { data, params, styles, window, adaptive, listeners, get webosCalls() { return webosCalls; } };
+  return { data, params, styles, window, adaptive, listeners, callbacks, bodyClasses, get webosCalls() { return webosCalls; } };
 }
 
 test('single Night menu with UI and subtitle settings', () => {
@@ -39,7 +42,7 @@ test('single Night menu with UI and subtitle settings', () => {
   assert.ok(h.params.some(p => p.param.name === 'night_sdr_native'));
   assert.ok(h.params.some(p => p.param.name === 'night_hdr_panel'));
   assert.ok(h.params.some(p => p.param.name === 'night_sdr_subs'));
-  assert.equal(h.window.LampaNight.version, '1.1.0');
+  assert.equal(h.window.LampaNight.version, '1.2.0');
 });
 
 test('SDR / Filmmaker dims just controls and HTML subtitles', () => {
@@ -110,4 +113,18 @@ test('subtitle tint supports warm colors without styling video frame', () => {
   assert.match(css,/\.player \.player-video__subtitles-text,\.player \.player-video__subtitles-text \*\{color:#c1a87f/);
   assert.match(css,/\.player video::cue\{color:#c1a87f/);
   assert.doesNotMatch(css, /\.player-video__video\{filter/);
+});
+
+test('player lifecycle gates menu dimming; micro subtitles and low opacity',()=>{
+ const h=harness({adaptive_subs_size:'0.7vh',night_html_opacity:'10',night_subs_tint:'graphite'});
+ h.callbacks.start();
+ assert.ok(h.bodyClasses.has('lampa-night-active'));
+ const css=h.window.LampaNight.css();
+ assert.match(css,/player-video__subtitles\{font-size:0\.7vh !important/);
+ assert.match(css,/libass-dom-subs\{font-size:0\.7vh !important/);
+ assert.match(css,/opacity:0\.1 !important/);
+ assert.match(css,/color:#6e7479/);
+ assert.match(css,/\.glass--style \.selectbox-item\.focus/);
+ h.callbacks.destroy();
+ assert.ok(!h.bodyClasses.has('lampa-night-active'));
 });

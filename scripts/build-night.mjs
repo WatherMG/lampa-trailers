@@ -29,13 +29,13 @@ replaceOnce(
 );
 replaceOnce(
   "values: { 'default': 'Не менять (как в Lampa)', '3.2vh': 'Очень маленький', '3.8vh': 'Маленький', '4.4vh': 'Средний', '5vh': 'Крупный', '5.8vh': 'Очень крупный' }",
-  "values: { 'default': 'Не менять (как в Lampa)', '1.4vh': 'Минимальный', '1.8vh': 'Очень мелкий', '2.2vh': 'Мелкий', '2.6vh': 'Компактный', '3vh': 'Маленький', '3.2vh': 'Очень маленький (оригинал)', '3.8vh': 'Маленький (оригинал)', '4.4vh': 'Средний', '5vh': 'Крупный', '5.8vh': 'Очень крупный' }"
+  "values: { 'default': 'Не менять (как в Lampa)', '0.5vh': 'Микро 0.5vh', '0.7vh': '0.7vh', '0.9vh': '0.9vh', '1vh': '1.0vh', '1.2vh': '1.2vh', '1.4vh': 'Минимальный', '1.8vh': 'Очень мелкий', '2.2vh': 'Мелкий', '2.6vh': 'Компактный', '3vh': 'Маленький', '3.2vh': 'Очень маленький (оригинал)', '3.8vh': 'Маленький (оригинал)', '4.4vh': 'Средний', '5vh': 'Крупный', '5.8vh': 'Очень крупный' }"
 );
 // Exports and HDR detection stay identical to upstream to preserve manual
 // remote toggle, per-title overrides, TorrServer /ffp and webOS controls.
 const intro = [
   '/*!',
-  ' * Lampa Night v1.1.0: one-file HDR subtitle + low-glare player plugin.',
+  ' * Lampa Night v1.2.0: one-file HDR subtitle + low-glare player plugin.',
   ' * Adaptive Subtitles © 2026 emoorpheus, MIT.',
   ' * Night UI © 2026 WatherMG, contributors, MIT.',
   ' * Upstream license: https://github.com/emoorpheus/lampa-adaptive-subtitles/blob/main/LICENSE',

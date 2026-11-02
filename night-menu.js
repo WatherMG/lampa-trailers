@@ -10,7 +10,7 @@
   if (!window.Lampa || !Lampa.Select || !Lampa.Player) return;
 
   var LABEL = 'Night — интерфейс и субтитры';
-  var LEVELS = {'25':'25%','35':'35%','45':'45%','55':'55%','65':'65%','75':'75%','85':'85%','100':'100% (без затемнения)'};
+  var LEVELS = {'5':'5%','10':'10%','15':'15%','20':'20%','25':'25%','35':'35%','45':'45%','55':'55%','65':'65%','75':'75%','85':'85%','100':'100% (без затемнения)'};
   var HDR_LEVELS = {'#9a9a9a':'60%','#8a8a8a':'54%','#7a7a7a':'48%','#666666':'40%','#555555':'33%','#404040':'25%'};
   var HDR_OVERRIDES = {'same':'Как основной'};
   var groups = [
@@ -21,8 +21,8 @@
     {name:'detection', title:'Режим HDR/SDR и пульт'},
     {name:'status', title:'Диагностика'}
   ];
-  var colors = {default:'Не менять', gray:'Серый',warm:'Тёплый серый',soft:'Мягкий',amber:'Янтарный'};
-  var sizes = {'default':'Как в Lampa','1.4vh':'1,4vh','1.8vh':'1,8vh','2.2vh':'2,2vh','2.6vh':'2,6vh','3vh':'3vh','3.2vh':'3,2vh','3.8vh':'3,8vh','4.4vh':'4,4vh','5vh':'5vh','5.8vh':'5,8vh'};
+  var colors = {default:'Не менять',gray:'Серый',graphite:'Графит',silver:'Серебристый',warm:'Тёплый серый',parchment:'Пергамент',soft:'Мягкий светлый',amber:'Янтарный',yellow:'Приглушённый жёлтый',gold:'Матовое золото',sage:'Шалфейный',green:'Приглушённый зелёный',blue:'Мягкий синий',cyan:'Сине-зелёный',purple:'Лавандовый',pink:'Пыльно-розовый',orange:'Тёплый оранжевый',white:'Белый'};
+  var sizes = {'0.5vh':'0,5vh','0.7vh':'0,7vh','0.9vh':'0,9vh','1vh':'1,0vh','1.2vh':'1,2vh','default':'Как в Lampa','1.4vh':'1,4vh','1.8vh':'1,8vh','2.2vh':'2,2vh','2.6vh':'2,6vh','3vh':'3vh','3.2vh':'3,2vh','3.8vh':'3,8vh','4.4vh':'4,4vh','5vh':'5vh','5.8vh':'5,8vh'};
   var defs = [
     {group:'panel',key:'night_enabled',title:'Ночное оформление',values:{'true':'Включено','false':'Выключено'},def:'true'},
     {group:'panel',key:'night_palette',title:'Палитра',values:{warm:'Тёплая',graphite:'Графит',blue:'Холодная'},def:'warm'},
@@ -31,6 +31,7 @@
     {group:'panel',key:'night_focus_outline',title:'Контур выбранной кнопки',values:{'true':'Включён','false':'Выключен'},def:'true'},
     {group:'html',key:'adaptive_subs_size',title:'Размер субтитров',values:sizes,def:'default'},
     {group:'html',key:'night_subs_tint',title:'Цвет HTML-субтитров',values:colors,def:'default'},
+    {group:'html',key:'night_html_opacity',title:'Непрозрачность HTML-субтитров',values:LEVELS,def:'100'},
     {group:'html',key:'night_subs_weight',title:'Толщина текста',values:{default:'Как в Lampa','400':'Обычный','500':'Средний','600':'Полужирный','700':'Жирный'},def:'default'},
     {group:'html',key:'night_subs_position',title:'Положение текста',values:{default:'Как в Lampa','2vh':'Немного выше','5vh':'Выше','8vh':'Высоко','12vh':'Очень высоко'},def:'default'},
     {group:'html',key:'night_sdr_subs',title:'Яркость HTML-субтитров SDR',values:LEVELS,def:'65'},
@@ -256,7 +257,7 @@
     }
   }
   window.LampaNightMenu = {
-    version:'1.1.0',
+    version:'1.2.0',
     open:function(){rootMenu(null);},
     nativeInfo:currentNativeInfo,applyNative:applyNative,
     applyImmediately:applyImmediately, nativeStatus:function(){return nativeState;},

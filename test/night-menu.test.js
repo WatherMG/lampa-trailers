@@ -138,3 +138,10 @@ test('only settings popups in player receive injected Night entry',()=>{
   h.events['select:preshow']({active:quality});
   assert.equal(quality.items.length,1);
 });
+
+test('in-player offers micro font sizes and expanded color / opacity range',()=>{
+ const h=setup();h.window.LampaNightMenu.open();h.selectMenu('HTML-субтитры');h.selectMenu('Размер субтитров');
+ h.chooseValue('0.5vh');assert.equal(h.store.adaptive_subs_size,'0.5vh');
+ h.selectMenu('Цвет HTML');h.chooseValue('graphite');assert.equal(h.store.night_subs_tint,'graphite');
+ h.selectMenu('Непрозрачность HTML');h.chooseValue('5');assert.equal(h.store.night_html_opacity,'5');
+});
