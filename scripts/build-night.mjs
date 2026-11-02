@@ -35,7 +35,7 @@ replaceOnce(
 // remote toggle, per-title overrides, TorrServer /ffp and webOS controls.
 const intro = [
   '/*!',
-  ' * Lampa Night v1.0.0-night.1: one-file HDR subtitle + low-glare player plugin.',
+  ' * Lampa Night v1.1.0: one-file HDR subtitle + low-glare player plugin.',
   ' * Adaptive Subtitles © 2026 emoorpheus, MIT.',
   ' * Night UI © 2026 WatherMG, contributors, MIT.',
   ' * Upstream license: https://github.com/emoorpheus/lampa-adaptive-subtitles/blob/main/LICENSE',
@@ -44,6 +44,7 @@ const intro = [
   ''
 ].join('\n');
 const ui = readFileSync(join(root, 'night-controls.js'), 'utf8');
-const result = intro + code + '\n' + ui;
+const menu = readFileSync(join(root, 'night-menu.js'), 'utf8');
+const result = intro + code + '\n' + ui + '\n' + menu;
 writeFileSync(join(root, 'night.js'), result);
 console.log('Created night.js:', result.length, 'bytes');

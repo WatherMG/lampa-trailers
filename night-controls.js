@@ -40,6 +40,18 @@
     var s = '';
     // Lampa's panel and controls only. Do NOT filter .player, .player-video or <video>.
     s += '.player .player-panel{filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;color:' + p.text + ' !important;}';
+    // The upper status bar (.player-info) is a sibling of .player-panel.
+    // Footer playlist and right-hand selectbox are independent DOM roots.
+    // Use the same palette and HDR/SDR brightness for all player chrome.
+    s += '.player .player-info,.player .player-footer{filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;color:' + p.text + ' !important;}';
+    s += '.player .player-info .value--size span,.player .player-info .value--pieces span{background-color:' + p.bg + ' !important;}';
+    s += '.player .player-info .value--pieces span.active{background-color:' + p.accent + ' !important;}';
+    s += '.player .player-info__title,.player .player-info__name,.player .player-info__time,.player .player-info__time-end,.player .player-info__values,.player .player-footer-card__title,.player .player-footer-card__text{color:' + p.text + ' !important;}';
+    s += 'body.player--viewing .selectbox__content,body.player--viewing .modal__content{background:' + p.bg + ' !important;color:' + p.text + ' !important;filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;}';
+    s += 'body.player--viewing .selectbox__title,body.player--viewing .selectbox-item__title,body.player--viewing .selectbox-item__subtitle{color:' + p.text + ' !important;}';
+    s += 'body.player--viewing .selectbox-item.focus,body.player--viewing .selectbox-item.picked{background:' + p.focus + ' !important;color:' + p.ink + ' !important;}';
+    s += 'body.player--viewing .selectbox-item.selected:after,body.player--viewing .selectbox-item.picked:after{border-color:' + p.accent + ' !important;}';
+    s += 'body.player--viewing .selectbox-item__checkbox{border-color:' + p.accent + ' !important;}';
     s += '.player .player-panel .button.focus{background:' + p.focus + ' !important;color:' + p.ink + ' !important;}';
     s += '.player .player-panel .button .tooltip{color:' + p.text + ' !important;text-shadow:0 1px 2px #000;}';
     s += '.player .player-panel__box-buttons,.player .player-panel__playpause:not(.focus),.player .player-panel__time,.player .player-panel__volume-drop{background:' + p.bg + ' !important;}';
@@ -62,6 +74,12 @@
         s += '.player .player-video__subtitles-text,.player .player-video__ass,.player .JASSUB{filter:' + f + ' !important;-webkit-filter:' + f + ' !important;}';
         s += '.player video::cue{color:' + rgbRatio(sub) + ' !important;}';
       }
+    }
+    var tint = read('night_subs_tint', 'default');
+    var TINTS = {gray:'#b1b1b1',warm:'#c2b8a4',soft:'#d3d3d3',amber:'#c1a87f'};
+    if (TINTS[tint]) {
+      s += '.player .player-video__subtitles-text,.player .player-video__subtitles-text *{color:' + TINTS[tint] + ' !important;}';
+      s += '.player video::cue{color:' + TINTS[tint] + ' !important;}';
     }
     var pos = read('night_subs_position','default');
     if (/^(2|5|8|12)vh$/.test(pos)) s += '.player .player-video__subtitles:not(.on-top){bottom:' + pos + ' !important;}';
@@ -112,6 +130,9 @@
           updateWebos);
       }
     } catch (e) {}
+    add('night_subs_tint','select','default',
+      {default:'Не изменять цвет',gray:'Нейтральный серый',warm:'Тёплый серый',soft:'Мягкий светлый',amber:'Янтарный'},
+      'Цвет HTML-субтитров', 'Работает только для текстовых субтитров браузера.');
     add('night_subs_position','select','default',
       {default:'Как в Lampa','2vh':'Немного выше','5vh':'Выше','8vh':'Высоко','12vh':'Очень высоко'},
       'Положение HTML-субтитров','Системные LG-субтитры не перемещаются.');
@@ -126,7 +147,7 @@
     apply();
     if (window.addEventListener) window.addEventListener('adaptive_subs:profile', apply, false);
   }
-  window.LampaNight = {version:'1.0.0-night.1', apply:apply, css:css, profile:profile};
+  window.LampaNight = {version:'1.1.0', apply:apply, css:css, profile:profile};
   if (!window.Lampa || !Lampa.Listener) {
     console.error('[Lampa Night] Lampa APIs unavailable');
     return;
