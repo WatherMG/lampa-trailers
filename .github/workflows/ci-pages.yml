@@ -26,6 +26,11 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check trailers.js
+          node --check night-controls.js
+          node --check scripts/build-night.mjs
+          node scripts/build-night.mjs
+          node --check night.js
+          node --check test/night.test.js
           node --check test/trailers.test.js
           node --check scripts/build.mjs
           node --check scripts/verify-dist.mjs

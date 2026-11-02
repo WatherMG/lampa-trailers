@@ -107,3 +107,36 @@ Pages must use **Settings → Pages → Build and deployment → Source → GitH
 - [GitHub Pages custom Actions workflow](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
 
 MIT for original files in this repository. See [SECURITY.md](SECURITY.md) before sharing logs. No third-party Lampa/TVIGL source is copied.
+
+---
+
+## Night — встроенный плеер и субтитры (LG webOS)
+
+**Адрес после успешного деплоя на main:**
+
+https://wathermg.github.io/lampa-trailers/night.js
+
+Установите в **Lampa → Настройки → Расширения → Добавить плагин**, затем перезапустите Lampa. Раздел: **Настройки → Night — плеер и субтитры**.
+
+**Не устанавливайте одновременно** оригинальный Adaptive Subtitles и Night: движок Adaptive Subtitles 1.0.0 уже включён в один JS-файл Night. Дублирующиеся обработчики и вызовы webOS могут конфликтовать. Существующий trailers.js не затрагивается.
+
+### Возможности
+
+- **Встроенная панель Lampa:** тёплая, графитовая, холодная синяя палитры; приглушение кнопок, полосы воспроизведения и выделения. Отдельная CSS-яркость панели для HDR (45% по умолчанию) и SDR/Filmmaker (60%). Изображение фильма не фильтруется.
+- **HDR / Dolby Vision / HLG:** полный движок Adaptive Subtitles 1.0.0 под лицензией MIT: распознавание по TorrServer ffprobe, HLS VIDEO-RANGE, названию файла; ручное переключение цветной кнопкой пульта, память по раздаче, раздельная яркость HDR10/DV/HLG.
+- **HTML-субтитры:** настройка HDR от 25% до 60%, отдельный SDR-уровень 65% по умолчанию, размер от 1.4vh, толщина текста и вертикальное положение.
+- **Нативные субтитры LG:** прозрачность символов через медиасервис webOS, независимо для HDR и SDR. Нативный размер ограничен значениями webOS 0–4; размер меньше 0 недоступен, произвольные цвет и положение CSS не меняет. Для более мелкого шрифта требуется HTML-рендер текстовых субтитров.
+- **API и настройки** оригинального Adaptive Subtitles остаются доступными через window.AdaptiveSubs; Night имеет window.LampaNight.
+
+### Ограничения и тестирование
+
+- Filmmaker — режим изображения, а не признак HDR. Для SDR и HDR предусмотрены разные настройки.
+- Проценты — уровень CSS-фильтра или доля прозрачности, **не реальные измеренные ниты**.
+- Встроенные субтитры LG отрисовываются нативным медиадвижком, поэтому webOS API и изменения прозрачности нужно проверить на реальном LG G6. CI не заменяет такой тест.
+- WebVTT video::cue невозможно фильтровать brightness; для него меняется цвет. Стили сторонних плагинов плеера могут конфликтовать с Night.
+- Настройка «Ночной режим» отключает дополнительные CSS-стили панели Night, но не встроенный движок Adaptive Subtitles.
+- Диагностика: window.LampaNight.css(), window.AdaptiveSubs.state, window.AdaptiveSubs.toggle().
+
+### Исходники и сборка
+
+night-controls.js — ночной UI; vendor/adaptive_subs-1.0.0.js — исходный MIT-движок; scripts/build-night.mjs создаёт **один** night.js. Лицензия оригинального проекта: vendor/LICENSE.adaptive-subtitles. CI проверяет синтаксис, тесты и публикуемый состав Pages. Сборка: npm run check && npm test && npm run build.
