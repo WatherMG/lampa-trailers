@@ -74,7 +74,7 @@ test('adds Night only to settings menu of an active player without replacing exi
   assert.equal(options.items.length,4,'do not duplicate Night');
   const unrelated={items:[{method:'subs'}]};
   h.events['select:preshow']({active:unrelated});
-  assert.equal(unrelated.items.length,2,'matching legacy subs may also be present');
+  assert.equal(unrelated.items.length,1,'unrelated subtitle menus must remain unchanged');
 });
 
 test('in-player menu changes SDR/HDR palette directly and reapplies',()=>{
