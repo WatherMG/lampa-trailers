@@ -51,7 +51,7 @@
     s += '.player .player-info .value--size span,.player .player-info .value--pieces span{background-color:' + p.bg + ' !important;}';
     s += '.player .player-info .value--pieces span.active{background-color:' + p.accent + ' !important;}';
     s += '.player .player-info__title,.player .player-info__name,.player .player-info__time,.player .player-info__time-end,.player .player-info__values,.player .player-footer-card__title,.player .player-footer-card__text{color:' + p.text + ' !important;}';
-    s += 'body.player--viewing .selectbox__content,body.player--viewing .modal__content{background:' + p.bg + ' !important;color:' + p.text + ' !important;filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;}';
+    s += scope + ' .selectbox__content,' + scope + ' .modal__content{background:' + p.bg + ' !important;color:' + p.text + ' !important;filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;}';
     s += 'body.player--viewing .selectbox__title,body.player--viewing .selectbox-item__title,body.player--viewing .selectbox-item__subtitle{color:' + p.text + ' !important;}';
     s += 'body.player--viewing .selectbox-item.focus,body.player--viewing .selectbox-item.picked{background:' + p.focus + ' !important;color:' + p.ink + ' !important;}';
     s += 'body.player--viewing .selectbox-item.selected:after,body.player--viewing .selectbox-item.picked:after{border-color:' + p.accent + ' !important;}';
@@ -60,7 +60,8 @@
     // the focused selectors; background of the container alone is not enough.
     s += scope + ' .selectbox__content,' + scope + ' .modal__content{' +
       'background-color:#151719 !important;backdrop-filter:none !important;' +
-      'color:' + p.text + ' !important;}';
+      'color:' + p.text + ' !important;filter:brightness(' + dim + ') !important;' +
+      '-webkit-filter:brightness(' + dim + ') !important;}';
     s += scope + ' .selectbox-item,' + scope + ' .selectbox-item__title,' +
       scope + ' .selectbox-item__subtitle,' + scope + ' .selectbox__title,' +
       scope + ' .settings-param-title{color:' + p.text + ' !important;}';
@@ -89,7 +90,12 @@
     s += '.player.player--loading .player-panel__timeline:after{background:' + p.accent + ' !important;}';
     s += '.player .player-panel__timeline-segment--ad{background:rgba(170,120,70,.35) !important;}';
     s += '.player .player-panel__timeline-segment--skip{background:rgba(100,140,160,.35) !important;}';
-    s += '.player .player-video__paused{background:rgba(45,45,45,.5) !important;filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;}';
+    s += '.player .player-video__paused,.player .player-video__loader{' +
+      'background-color:rgba(40,43,47,.65) !important;filter:brightness(' + dim + ') !important;' +
+      '-webkit-filter:brightness(' + dim + ') !important;}';
+    s += '.player .player-video__loader{background-blend-mode:multiply !important;}';
+    s += '.player .player-video__noise-text,.player .player-video__backwork-icon,.player .player-video__forward-icon{' +
+      'filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;}';
     if (String(read('night_focus_outline','true')) !== 'false') {
       s += '.player .player-panel .button.focus{outline:2px solid ' + p.accent + ' !important;outline-offset:2px;}';
     }
@@ -220,7 +226,7 @@
     apply();
     if (window.addEventListener) window.addEventListener('adaptive_subs:profile', apply, false);
   }
-  window.LampaNight = {version:'1.2.0', apply:apply, css:css, profile:profile};
+  window.LampaNight = {version:'1.3.0', apply:apply, css:css, profile:profile};
   if (!window.Lampa || !Lampa.Listener) {
     console.error('[Lampa Night] Lampa APIs unavailable');
     return;
