@@ -58,7 +58,14 @@ function setup(overrides={}) {
     item.onSelect(item);
     return menuHistory[menuHistory.length-1];
   }
-  return {window,Lampa,store,video,menuHistory,requests,events,saves,selectMenu,
+  function chooseValue(value) {
+    const menu=menuHistory[menuHistory.length-1];
+    const item=menu.items.find(x=>x.value===value);
+    assert.ok(item, 'value '+value+' not present');
+    if (item.onSelect) item.onSelect(item);
+    else menu.onSelect(item);
+  }
+  return {window,Lampa,store,video,menuHistory,requests,events,saves,selectMenu,chooseValue,
     get applied(){return applied;},get kindApplied(){return kindApplied;},
     get webosApplied(){return webosApplied;},get modeApplied(){return modeApplied;}};
 }
@@ -82,8 +89,7 @@ test('in-player menu changes SDR/HDR palette directly and reapplies',()=>{
   h.window.LampaNightMenu.open();
   h.selectMenu('Интерфейс');
   h.selectMenu('Яркость интерфейса HDR');
-  const option=h.menuHistory[h.menuHistory.length-1].items.find(x=>x.value==='25');
-  option.onSelect(option);
+  h.chooseValue('25');
   assert.equal(h.store.night_hdr_panel,'25');
   assert.ok(h.kindApplied>0);
   assert.ok(h.applied>0);
@@ -95,14 +101,12 @@ test('native subtitle color and font size use webOS mediaId and report responses
   h.window.LampaNightMenu.open();
   h.selectMenu('Встроенные субтитры');
   h.selectMenu('Цвет LG');
-  const c=h.menuHistory[h.menuHistory.length-1].items.find(x=>x.value==='3');
-  c.onSelect(c);
+  h.chooseValue('3');
   assert.equal(h.store.night_native_color,'3');
   assert.ok(h.requests.some(r=>r.method==='setSubtitleColor'&&r.parameters.color===3&&r.parameters.mediaId==='test-media'));
   assert.ok(h.window.LampaNightMenu.nativeStatus().success);
   h.selectMenu('Нативный размер LG');
-  const size=h.menuHistory[h.menuHistory.length-1].items.find(x=>x.value==='0');
-  size.onSelect(size);
+  h.chooseValue('0');
   assert.equal(h.store.adaptive_subs_webos_size,'0');
   assert.ok(h.requests.some(r=>r.method==='setSubtitleFontSize'&&r.parameters.fontSize===0));
   assert.ok(h.webosApplied>0);
@@ -123,8 +127,7 @@ test('switching HDR mode reevaluates current stream',()=>{
   h.window.LampaNightMenu.open();
   h.selectMenu('Режим HDR/SDR');
   h.selectMenu('HDR/SDR профиль');
-  const v=h.menuHistory[h.menuHistory.length-1].items.find(x=>x.value==='sdr');
-  v.onSelect(v);
+  h.chooseValue('sdr');
   assert.equal(h.store.adaptive_subs_mode,'sdr');
   assert.ok(h.modeApplied>0);
 });
