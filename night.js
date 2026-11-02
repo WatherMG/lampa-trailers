@@ -1,5 +1,5 @@
 /*!
- * Lampa Night v1.1.0: one-file HDR subtitle + low-glare player plugin.
+ * Lampa Night v1.2.0: one-file HDR subtitle + low-glare player plugin.
  * Adaptive Subtitles © 2026 emoorpheus, MIT.
  * Night UI © 2026 WatherMG, contributors, MIT.
  * Upstream license: https://github.com/emoorpheus/lampa-adaptive-subtitles/blob/main/LICENSE
@@ -1019,7 +1019,7 @@
     graphite: { text: '#c4cbd0', bg: 'rgba(37,42,46,.85)', focus: '#424e59', ink: '#e6e9ed', accent: '#86929c' },
     blue: { text: '#c0ccdc', bg: 'rgba(30,40,56,.85)', focus: '#394c67', ink: '#e2eaf5', accent: '#819bb9' }
   };
-  var LEVELS = { '25':'25% — минимально', '35':'35% — очень тёмно', '45':'45% — тёмно', '55':'55% — умеренно', '65':'65% — комфортно', '75':'75% — светлее', '85':'85% — ярко', '100':'100% — как в Lampa' };
+  var LEVELS = { '5':'5% — экстремально тёмно', '10':'10% — почти невидимо', '15':'15% — очень тускло', '20':'20% — тускло', '25':'25% — минимально', '35':'35% — очень тёмно', '45':'45% — тёмно', '55':'55% — умеренно', '65':'65% — комфортно', '75':'75% — светлее', '85':'85% — ярко', '100':'100% — без затемнения' };
   function read(key, fallback) {
     try { var v = Lampa.Storage.get(key, fallback); return v === undefined || v === null ? fallback : v; }
     catch (e) { return fallback; }
@@ -1043,6 +1043,10 @@
     var val = profile() === 'hdr' ? level('night_hdr_panel', 45) : level('night_sdr_panel', 60);
     var dim = val / 100;
     var s = '';
+    var scope = 'body.lampa-night-active';
+    // The player's menus are attached directly to body and may not inherit
+    // any CSS rules from .player. Mark the body during playback below.
+    var deep = scope + '.glass--style';
     // Lampa's panel and controls only. Do NOT filter .player, .player-video or <video>.
     s += '.player .player-panel{filter:brightness(' + dim + ') !important;-webkit-filter:brightness(' + dim + ') !important;color:' + p.text + ' !important;}';
     // The upper status bar (.player-info) is a sibling of .player-panel.
@@ -1057,6 +1061,30 @@
     s += 'body.player--viewing .selectbox-item.focus,body.player--viewing .selectbox-item.picked{background:' + p.focus + ' !important;color:' + p.ink + ' !important;}';
     s += 'body.player--viewing .selectbox-item.selected:after,body.player--viewing .selectbox-item.picked:after{border-color:' + p.accent + ' !important;}';
     s += 'body.player--viewing .selectbox-item__checkbox{border-color:' + p.accent + ' !important;}';
+    // Strong Lampa menu overrides. The glass skin uses #fff !important in
+    // the focused selectors; background of the container alone is not enough.
+    s += scope + ' .selectbox__content,' + scope + ' .modal__content{' +
+      'background-color:#151719 !important;backdrop-filter:none !important;' +
+      'color:' + p.text + ' !important;}';
+    s += scope + ' .selectbox-item,' + scope + ' .selectbox-item__title,' +
+      scope + ' .selectbox-item__subtitle,' + scope + ' .selectbox__title,' +
+      scope + ' .settings-param-title{color:' + p.text + ' !important;}';
+    s += scope + ' .selectbox-item.focus,' + deep + ' .selectbox-item.focus,' +
+      scope + ' .selector.focus.selectbox-item,' + scope + ' .selectbox-item.selected.focus{' +
+      'background-color:' + p.focus + ' !important;color:' + p.ink +
+      ' !important;box-shadow:none !important;filter:brightness(' + dim + ') !important;}';
+    s += scope + ' .selectbox-item.focus .selectbox-item__title,' + scope +
+      ' .selectbox-item.focus .selectbox-item__subtitle{color:' + p.ink + ' !important;}';
+    s += scope + ' .selectbox-item.focus::after,' + scope + ' .selectbox-item.picked::after,' +
+      scope + ' .selectbox-item.selected::after{border-color:' + p.accent + ' !important;}';
+    s += scope + ' .selectbox-item.focus .selectbox-item__checkbox{' +
+      'filter:none !important; border-color:' + p.accent + ' !important;}';
+    // Playlist content remains readable even on highly reflective poster cards.
+    s += '.player .player-footer .card.focus,.player .player-footer .card-watched.focus,' +
+      '.player .player-footer .items-line__more.focus{background-color:' + p.focus +
+      ' !important;color:' + p.ink + ' !important;box-shadow:0 0 0 2px ' + p.accent + ' !important;}';
+    s += '.player .player-footer .card.focus::before,.player .player-footer .card.focus::after{' +
+      'border-color:' + p.accent + ' !important;}';
     s += '.player .player-panel .button.focus{background:' + p.focus + ' !important;color:' + p.ink + ' !important;}';
     s += '.player .player-panel .button .tooltip{color:' + p.text + ' !important;text-shadow:0 1px 2px #000;}';
     s += '.player .player-panel__box-buttons,.player .player-panel__playpause:not(.focus),.player .player-panel__time,.player .player-panel__volume-drop{background:' + p.bg + ' !important;}';
@@ -1081,10 +1109,39 @@
       }
     }
     var tint = read('night_subs_tint', 'default');
-    var TINTS = {gray:'#b1b1b1',warm:'#c2b8a4',soft:'#d3d3d3',amber:'#c1a87f'};
+    var TINTS = {
+      gray:'#808080', graphite:'#6e7479', silver:'#a6a6a6',
+      warm:'#a69b89', parchment:'#c2b8a4', soft:'#d3d3d3',
+      amber:'#c1a87f', yellow:'#b6ae77', gold:'#b4a26b',
+      sage:'#91a48c', green:'#7eae84', blue:'#88a0ba',
+      cyan:'#84aab3', purple:'#a39ab4', pink:'#b499a8',
+      orange:'#b89a82', white:'#ffffff'
+    };
     if (TINTS[tint]) {
       s += '.player .player-video__subtitles-text,.player .player-video__subtitles-text *{color:' + TINTS[tint] + ' !important;}';
       s += '.player video::cue{color:' + TINTS[tint] + ' !important;}';
+    }
+    // Browser-rendered cue layer: set size on the container itself
+    // (Lampa's .size--small etc. are applied to THIS element).
+    var size = String(read('adaptive_subs_size','default'));
+    if (/^(?:0\.[5-9]|1(?:\.[0-9])?|2(?:\.[0-9])?|3(?:\.[0-9])?|4(?:\.[0-9])?|5(?:\.[0-9])?)vh$/.test(size)) {
+      s += '.player .player-video__subtitles{font-size:' + size + ' !important;}';
+      s += '.player .player-video__subtitles-text{font-size:1em !important;}';
+      s += '.player video::cue{font-size:' + size + ' !important;}';
+      // Optional separate renderer (e.g. Improved Subtitles); it uses an
+      // inline font-size so !important is necessary to override it.
+      s += '.player .libass-dom-subs{font-size:' + size + ' !important;}';
+    }
+    if (TINTS[tint]) {
+      s += '.player .libass-dom-subs,.player .libass-dom-subs .player-video__subtitles-text{' +
+        'color:' + TINTS[tint] + ' !important;}';
+    }
+    var captionOpacity = level('night_html_opacity',100) / 100;
+    if (captionOpacity < 1) {
+      s += '.player .player-video__subtitles,.player .libass-dom-subs{' +
+        'opacity:' + captionOpacity + ' !important;}';
+      // WebVTT ::cue supports color in browsers, but opacity of
+      // the element itself is not consistently supported.
     }
     var pos = read('night_subs_position','default');
     if (/^(2|5|8|12)vh$/.test(pos)) s += '.player .player-video__subtitles:not(.on-top){bottom:' + pos + ' !important;}';
@@ -1135,8 +1192,13 @@
           updateWebos);
       }
     } catch (e) {}
+    add('night_html_opacity','select','100',LEVELS,'Прозрачность HTML-субтитров',
+      '5–100%. Только браузерный текст / HTML-рендерер; не влияет на системные субтитры LG.');
     add('night_subs_tint','select','default',
-      {default:'Не изменять цвет',gray:'Нейтральный серый',warm:'Тёплый серый',soft:'Мягкий светлый',amber:'Янтарный'},
+      {default:'Не менять',gray:'Серый',graphite:'Тёмный графит',silver:'Серебристый',warm:'Тёплый серый',
+       parchment:'Пергаментный',soft:'Мягкий светло-серый',amber:'Янтарный',yellow:'Приглушённый жёлтый',
+       gold:'Матовое золото',sage:'Шалфейный',green:'Приглушённый зелёный',blue:'Мягкий синий',
+       cyan:'Сине-зелёный',purple:'Лавандовый',pink:'Пыльно-розовый',orange:'Тёплый оранжевый',white:'Белый'},
       'Цвет HTML-субтитров', 'Работает только для текстовых субтитров браузера.');
     add('night_subs_position','select','default',
       {default:'Как в Lampa','2vh':'Немного выше','5vh':'Выше','8vh':'Высоко','12vh':'Очень высоко'},
@@ -1145,14 +1207,25 @@
       {default:'Как в Lampa','400':'Обычный','500':'Средний','600':'Полужирный','700':'Жирный'},
       'Толщина шрифта HTML-субтитров');
   }
+  function markActive(active) {
+    var body = document.body;
+    if (!body || !body.classList) return;
+    if (active) body.classList.add('lampa-night-active');
+    else body.classList.remove('lampa-night-active');
+  }
   function init() {
     if (init.done) return;
     init.done = true;
+    if (Lampa.Player && Lampa.Player.listener && Lampa.Player.listener.follow) {
+      Lampa.Player.listener.follow('start', function () { markActive(true); });
+      Lampa.Player.listener.follow('destroy', function () { markActive(false); });
+    }
+    try { if (Lampa.Player && Lampa.Player.opened && Lampa.Player.opened()) markActive(true); } catch (e) {}
     addSettings();
     apply();
     if (window.addEventListener) window.addEventListener('adaptive_subs:profile', apply, false);
   }
-  window.LampaNight = {version:'1.1.0', apply:apply, css:css, profile:profile};
+  window.LampaNight = {version:'1.2.0', apply:apply, css:css, profile:profile};
   if (!window.Lampa || !Lampa.Listener) {
     console.error('[Lampa Night] Lampa APIs unavailable');
     return;
@@ -1173,7 +1246,7 @@
   if (!window.Lampa || !Lampa.Select || !Lampa.Player) return;
 
   var LABEL = 'Night — интерфейс и субтитры';
-  var LEVELS = {'25':'25%','35':'35%','45':'45%','55':'55%','65':'65%','75':'75%','85':'85%','100':'100% (без затемнения)'};
+  var LEVELS = {'5':'5%','10':'10%','15':'15%','20':'20%','25':'25%','35':'35%','45':'45%','55':'55%','65':'65%','75':'75%','85':'85%','100':'100% (без затемнения)'};
   var HDR_LEVELS = {'#9a9a9a':'60%','#8a8a8a':'54%','#7a7a7a':'48%','#666666':'40%','#555555':'33%','#404040':'25%'};
   var HDR_OVERRIDES = {'same':'Как основной'};
   var groups = [
@@ -1184,8 +1257,8 @@
     {name:'detection', title:'Режим HDR/SDR и пульт'},
     {name:'status', title:'Диагностика'}
   ];
-  var colors = {default:'Не менять', gray:'Серый',warm:'Тёплый серый',soft:'Мягкий',amber:'Янтарный'};
-  var sizes = {'default':'Как в Lampa','1.4vh':'1,4vh','1.8vh':'1,8vh','2.2vh':'2,2vh','2.6vh':'2,6vh','3vh':'3vh','3.2vh':'3,2vh','3.8vh':'3,8vh','4.4vh':'4,4vh','5vh':'5vh','5.8vh':'5,8vh'};
+  var colors = {default:'Не менять',gray:'Серый',graphite:'Графит',silver:'Серебристый',warm:'Тёплый серый',parchment:'Пергамент',soft:'Мягкий светлый',amber:'Янтарный',yellow:'Приглушённый жёлтый',gold:'Матовое золото',sage:'Шалфейный',green:'Приглушённый зелёный',blue:'Мягкий синий',cyan:'Сине-зелёный',purple:'Лавандовый',pink:'Пыльно-розовый',orange:'Тёплый оранжевый',white:'Белый'};
+  var sizes = {'0.5vh':'0,5vh','0.7vh':'0,7vh','0.9vh':'0,9vh','1vh':'1,0vh','1.2vh':'1,2vh','default':'Как в Lampa','1.4vh':'1,4vh','1.8vh':'1,8vh','2.2vh':'2,2vh','2.6vh':'2,6vh','3vh':'3vh','3.2vh':'3,2vh','3.8vh':'3,8vh','4.4vh':'4,4vh','5vh':'5vh','5.8vh':'5,8vh'};
   var defs = [
     {group:'panel',key:'night_enabled',title:'Ночное оформление',values:{'true':'Включено','false':'Выключено'},def:'true'},
     {group:'panel',key:'night_palette',title:'Палитра',values:{warm:'Тёплая',graphite:'Графит',blue:'Холодная'},def:'warm'},
@@ -1194,6 +1267,7 @@
     {group:'panel',key:'night_focus_outline',title:'Контур выбранной кнопки',values:{'true':'Включён','false':'Выключен'},def:'true'},
     {group:'html',key:'adaptive_subs_size',title:'Размер субтитров',values:sizes,def:'default'},
     {group:'html',key:'night_subs_tint',title:'Цвет HTML-субтитров',values:colors,def:'default'},
+    {group:'html',key:'night_html_opacity',title:'Непрозрачность HTML-субтитров',values:LEVELS,def:'100'},
     {group:'html',key:'night_subs_weight',title:'Толщина текста',values:{default:'Как в Lampa','400':'Обычный','500':'Средний','600':'Полужирный','700':'Жирный'},def:'default'},
     {group:'html',key:'night_subs_position',title:'Положение текста',values:{default:'Как в Lampa','2vh':'Немного выше','5vh':'Выше','8vh':'Высоко','12vh':'Очень высоко'},def:'default'},
     {group:'html',key:'night_sdr_subs',title:'Яркость HTML-субтитров SDR',values:LEVELS,def:'65'},
@@ -1419,7 +1493,7 @@
     }
   }
   window.LampaNightMenu = {
-    version:'1.1.0',
+    version:'1.2.0',
     open:function(){rootMenu(null);},
     nativeInfo:currentNativeInfo,applyNative:applyNative,
     applyImmediately:applyImmediately, nativeStatus:function(){return nativeState;},
