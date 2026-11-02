@@ -147,7 +147,7 @@
     apply();
     if (window.addEventListener) window.addEventListener('adaptive_subs:profile', apply, false);
   }
-  window.LampaNight = {version:'1.0.0-night.1', apply:apply, css:css, profile:profile};
+  window.LampaNight = {version:'1.1.0', apply:apply, css:css, profile:profile};
   if (!window.Lampa || !Lampa.Listener) {
     console.error('[Lampa Night] Lampa APIs unavailable');
     return;
