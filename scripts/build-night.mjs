@@ -44,6 +44,7 @@ const intro = [
   ''
 ].join('\n');
 const ui = readFileSync(join(root, 'night-controls.js'), 'utf8');
-const result = intro + code + '\n' + ui;
+const menu = readFileSync(join(root, 'night-menu.js'), 'utf8');
+const result = intro + code + '\n' + ui + '\n' + menu;
 writeFileSync(join(root, 'night.js'), result);
 console.log('Created night.js:', result.length, 'bytes');
