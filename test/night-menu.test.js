@@ -145,3 +145,5 @@ test('in-player offers micro font sizes and expanded color / opacity range',()=>
  h.selectMenu('Цвет HTML');h.chooseValue('graphite');assert.equal(h.store.night_subs_tint,'graphite');
  h.selectMenu('Непрозрачность HTML');h.chooseValue('5');assert.equal(h.store.night_html_opacity,'5');
 });
+
+test('native settings include experimental -4 and HDR opacity 5%',()=>{const h=setup();h.window.LampaNightMenu.open();h.selectMenu('Встроенные субтитры');h.selectMenu('Позиция LG');h.chooseValue('-4');assert.equal(h.store.night_native_position,'-4');assert.ok(h.requests.some(r=>r.method==='setSubtitlePosition'&&r.parameters.position===-4));h.selectMenu('HDR: непрозрачность LG');h.chooseValue('13');assert.equal(h.store.adaptive_subs_webos_opacity,'13');});

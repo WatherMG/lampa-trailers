@@ -35,7 +35,7 @@ replaceOnce(
 // remote toggle, per-title overrides, TorrServer /ffp and webOS controls.
 const intro = [
   '/*!',
-  ' * Lampa Night v1.2.0: one-file HDR subtitle + low-glare player plugin.',
+  ' * Lampa Night v1.3.0: one-file HDR subtitle + low-glare player plugin.',
   ' * Adaptive Subtitles © 2026 emoorpheus, MIT.',
   ' * Night UI © 2026 WatherMG, contributors, MIT.',
   ' * Upstream license: https://github.com/emoorpheus/lampa-adaptive-subtitles/blob/main/LICENSE',
