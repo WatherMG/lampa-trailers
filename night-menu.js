@@ -81,6 +81,7 @@
     }
     var parameters = {mediaId:id};
     parameters[param] = value;
+    nativeState = {method:method,success:null,last:'Отправлено '+method+'; ожидается ответ webOS'};
     try {
       window.webOS.service.request('luna://com.webos.media', {
         method:method,parameters:parameters,
@@ -99,7 +100,6 @@
       alertMsg(nativeState.last);
       return false;
     }
-    nativeState = {method:method,success:null,last:'Отправлено '+method+'; ожидается ответ webOS'};
     return true;
   }
   function applyNative() {
@@ -223,14 +223,14 @@
   function onSelectPreshow(e) {
     if (!e || !e.active || !e.active.items || !Lampa.Player.opened || !Lampa.Player.opened()) return;
     var active=e.active;
-    var settings=false,hasNight=false;
+    var hasSubs=false,hasSegments=false,hasNight=false;
     for(var i=0;i<active.items.length;i++) {
       var item=active.items[i];
-      if(item.method==='subs')settings=true;
-      if(item.method==='segments')settings=settings&&true;
+      if(item.method==='subs')hasSubs=true;
+      if(item.method==='segments')hasSegments=true;
       if(item.method==='night')hasNight=true;
     }
-    if (!settings || hasNight) return;
+    if (!hasSubs || !hasSegments || hasNight) return;
     active.items.push({
       title:LABEL, method:'night',
       subtitle:'Яркость, цвета, HDR, субтитры и LG webOS',
