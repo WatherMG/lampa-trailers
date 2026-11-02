@@ -101,7 +101,7 @@ test('all player chrome and player-scoped popup menus share Night palette', () =
   assert.match(css, /\.player \.player-info,\.player \.player-footer\{filter:brightness\(0\.35\)/);
   assert.match(css, /\.player \.player-info__time/);
   assert.match(css, /\.player \.player-info__values/);
-  assert.match(css, /body\.player--viewing \.selectbox__content/);
+  assert.match(css, /body\.lampa-night-active \.selectbox__content/);
   assert.match(css, /body\.player--viewing \.selectbox-item\.focus/);
   assert.match(css, /\.player \.player-panel/);
   assert.doesNotMatch(css, /body \.selectbox__content/);
