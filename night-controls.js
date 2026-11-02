@@ -30,7 +30,7 @@
   }
   function rgbRatio(pct) {
     var n = Math.max(0, Math.min(255, Math.round(pct * 2.55)));
-    var h = n.toString(16); return '#' + (h.length === 1 ? '0' + h : h).repeat(3);
+    var h = n.toString(16); var d = h.length === 1 ? '0' + h : h; return '#' + d + d + d;
   }
   function css() {
     if (!enabled()) return '';
