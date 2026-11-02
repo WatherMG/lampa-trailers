@@ -42,7 +42,7 @@ test('single Night menu with UI and subtitle settings', () => {
   assert.ok(h.params.some(p => p.param.name === 'night_sdr_native'));
   assert.ok(h.params.some(p => p.param.name === 'night_hdr_panel'));
   assert.ok(h.params.some(p => p.param.name === 'night_sdr_subs'));
-  assert.equal(h.window.LampaNight.version, '1.2.0');
+  assert.equal(h.window.LampaNight.version, '1.3.0');
 });
 
 test('SDR / Filmmaker dims just controls and HTML subtitles', () => {
@@ -128,3 +128,5 @@ test('player lifecycle gates menu dimming; micro subtitles and low opacity',()=>
  h.callbacks.destroy();
  assert.ok(!h.bodyClasses.has('lampa-night-active'));
 });
+
+test('loader and full selectbox container follow HDR brightness',()=>{const h=harness({night_hdr_panel:'15'});h.adaptive.state.profile='hdr';const css=h.window.LampaNight.css();assert.match(css,/player-video__loader/);assert.match(css,/background-blend-mode:multiply/);assert.match(css,/selectbox__content/);assert.match(css,/brightness\(0\.15\)/);});
